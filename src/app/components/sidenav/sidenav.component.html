@@ -1,0 +1,42 @@
+<mat-toolbar>
+    <button mat-icon-button (click)="toggleSidebar(); sidenav.toggle()">
+      <mat-icon>menu</mat-icon>
+    </button>
+    Timetracking App
+  </mat-toolbar>
+<mat-sidenav-container class="example-container">
+    <mat-sidenav #sidenav mode="side" opened>
+        <mat-nav-list>
+            <a mat-list-item (click)="selectComponent('dashboard')">
+              <mat-icon>dashboard</mat-icon>
+              <span *ngIf="isExpanded">Dashboard</span>
+            </a>
+            <a mat-list-item (click)="selectComponent('settings')">
+              <mat-icon>settings</mat-icon>
+              <span *ngIf="isExpanded">Settings</span>
+            </a>
+            <a mat-list-item (click)="selectComponent('profile')">
+              <mat-icon>person</mat-icon>
+              <span *ngIf="isExpanded">Profile</span>
+            </a>
+          </mat-nav-list>
+      </mat-sidenav>
+    
+      <mat-sidenav-content>
+    
+        <div *ngIf="selectedComponent === 'dashboard'">
+          <app-dashboard></app-dashboard>
+        </div>
+        
+        <div *ngIf="selectedComponent === 'settings'">
+          <h2>Settings</h2>
+          <p>Modify your preferences here.</p>
+        </div>
+        
+        <div *ngIf="selectedComponent === 'profile'">
+          <h2>Profile</h2>
+          <p>Manage your profile information.</p>
+        </div>
+      </mat-sidenav-content>
+  </mat-sidenav-container>
+  
