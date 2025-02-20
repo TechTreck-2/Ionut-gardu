@@ -1,0 +1,42 @@
+.timer-container {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  padding: 10px;
+}
+
+.left-panel, .right-panel {
+  flex: 1;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.left-panel {
+  flex-direction: column;
+  display: flex;
+}
+
+button {
+  margin: 5px;
+}
+
+.progress-container {
+  position: relative;
+  margin-top: 20px;
+}
+
+.progress-label {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  color: black;
+  font-weight: bold;
+}
+
+.right-panel h3 {
+  text-decoration: underline;
+  color: black;
+}
