@@ -1,0 +1,38 @@
+<div class="time-tracking-container">
+    <mat-form-field appearance="fill">
+      <mat-label>Select Date</mat-label>
+      <input matInput [matDatepicker]="picker" [(ngModel)]="selectedDate">
+      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+  
+    <mat-form-field appearance="fill">
+      <mat-label>Hours Worked</mat-label>
+      <input matInput type="number" [(ngModel)]="newHours">
+    </mat-form-field>
+  
+    <button mat-raised-button color="primary" (click)="addEntry()">Add/Update Entry</button>
+  
+    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef>Date</th>
+        <td mat-cell *matCellDef="let element">{{ element.date | date: 'dd/MM/yyyy' }}</td>
+      </ng-container>
+  
+      <ng-container matColumnDef="hoursWorked">
+        <th mat-header-cell *matHeaderCellDef>Hours Worked</th>
+        <td mat-cell *matCellDef="let element">{{ element.hoursWorked }}</td>
+      </ng-container>
+  
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let element">
+          <button mat-button (click)="editEntry(element)">Edit</button>
+          <button mat-button (click)="deleteEntry(element)">Delete</button>
+        </td>
+      </ng-container>
+  
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>

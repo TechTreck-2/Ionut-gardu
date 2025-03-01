@@ -5,8 +5,8 @@ import { MatListModule } from '@angular/material/list';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { DashboardComponent } from "../dashboard/dashboard.component";
 import { TimerComponent } from '../timer/timer.component';
+import { TimeTrackingComponent } from '../timetable/timetable.component';
 @Component({
   selector: 'app-sidenav',
   imports: [
@@ -16,8 +16,8 @@ import { TimerComponent } from '../timer/timer.component';
     MatToolbarModule,
     MatIconModule,
     MatButtonModule,
-    DashboardComponent,
-    TimerComponent
+    TimerComponent,
+    TimeTrackingComponent
 ],
   templateUrl: './sidenav.component.html',
   styleUrl: './sidenav.component.css'

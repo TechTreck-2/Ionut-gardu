@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { CommonModule, DatePipe } from '@angular/common';
+import { TimeTrackingService } from '../../time-tracking.service';
 
 @Component({
   selector: 'app-timer',
@@ -12,7 +13,7 @@ import { CommonModule, DatePipe } from '@angular/common';
   styleUrls: ['./timer.component.css'],
   providers: [DatePipe]
 })
-export class TimerComponent {
+export class TimerComponent implements OnInit {
   time: number = 0;
   interval: any;
   isRunning: boolean = false;
@@ -20,22 +21,13 @@ export class TimerComponent {
   clockOutTime: Date | null = null;
   totalWorkTime: number = 8 * 3600; // 8 hours in seconds
 
-  constructor(private snackBar: MatSnackBar, private datePipe: DatePipe) {}
+  constructor(private snackBar: MatSnackBar, private datePipe: DatePipe, private timeTrackingService: TimeTrackingService) {}
 
   ngOnInit(): void {
-    if (this.isLocalStorageAvailable()) {
-      const savedData = localStorage.getItem('savedTime');
-      if (savedData) {
-        const { date, time, firstClockIn, clockOutTime } = JSON.parse(savedData);
-        const today = new Date().toDateString();
-        if (date === today) {
-          this.time = time;
-          this.firstClockIn = firstClockIn ? new Date(firstClockIn) : null;
-          this.clockOutTime = clockOutTime ? new Date(clockOutTime) : null;
-        } else {
-          this.resetTimer();
-        }
-      }
+    const today = new Date().toDateString();
+    const entry = this.timeTrackingService.getTimeEntries().find(e => e.date === today);
+    if (entry) {
+      this.time = entry.hoursWorked * 3600; // Convert hours to seconds
     }
   }
 
@@ -45,7 +37,7 @@ export class TimerComponent {
       if (!this.firstClockIn) {
         this.firstClockIn = new Date();
       }
-      this.clockOutTime = null; // Reset clock-out time when clocking in
+      this.clockOutTime = null;
       this.interval = setInterval(() => {
         this.time++;
       }, 1000);
@@ -57,16 +49,9 @@ export class TimerComponent {
       clearInterval(this.interval);
       this.isRunning = false;
       this.clockOutTime = new Date();
-      if (this.isLocalStorageAvailable()) {
-        const today = new Date().toDateString();
-        const data = {
-          date: today,
-          time: this.time,
-          firstClockIn: this.firstClockIn,
-          clockOutTime: this.clockOutTime
-        };
-        localStorage.setItem('savedTime', JSON.stringify(data));
-      }
+      const today = new Date().toDateString();
+      const hoursWorked = this.time / 3600; // Convert seconds to hours
+      this.timeTrackingService.addOrUpdateEntry({ date: today, hoursWorked });
       this.snackBar.open('Time saved successfully!', 'Close', { duration: 2000 });
     }
   }
@@ -77,20 +62,12 @@ export class TimerComponent {
     this.isRunning = false;
     this.firstClockIn = null;
     this.clockOutTime = null;
-    if (this.isLocalStorageAvailable()) {
-      localStorage.removeItem('savedTime');
-    }
+    const today = new Date().toDateString();
+    this.timeTrackingService.deleteEntry(today);
   }
 
-  private isLocalStorageAvailable(): boolean {
-    try {
-      const testKey = '__test__';
-      localStorage.setItem(testKey, testKey);
-      localStorage.removeItem(testKey);
-      return true;
-    } catch (e) {
-      return false;
-    }
+  get workPercentage(): number {
+    return (this.time / this.totalWorkTime) * 100;
   }
 
   get formattedTime(): string {
@@ -98,10 +75,6 @@ export class TimerComponent {
     const minutes = Math.floor((this.time % 3600) / 60);
     const seconds = this.time % 60;
     return `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
-  }
-
-  get workPercentage(): number {
-    return (this.time / this.totalWorkTime) * 100;
   }
 
   get timeLeft(): string {
