@@ -11,9 +11,9 @@
               <mat-icon>dashboard</mat-icon>
               <span *ngIf="isExpanded">Dashboard</span>
             </a>
-            <a mat-list-item (click)="selectComponent('settings')">
+            <a mat-list-item (click)="selectComponent('table')">
               <mat-icon>settings</mat-icon>
-              <span *ngIf="isExpanded">Settings</span>
+              <span *ngIf="isExpanded">Tracking Situation</span>
             </a>
             <a mat-list-item (click)="selectComponent('profile')">
               <mat-icon>person</mat-icon>
@@ -28,7 +28,7 @@
           <app-timer></app-timer>
         </div>
         
-        <div *ngIf="selectedComponent === 'settings'">
+        <div *ngIf="selectedComponent === 'table'">
           <app-time-table></app-time-table>
           
         </div>

@@ -2,68 +2,69 @@ import { Component, OnInit } from '@angular/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTableModule } from '@angular/material/table';
 import { CommonModule, DatePipe } from '@angular/common';
-import { TimeTrackingService } from '../../time-tracking.service';
-
+import { TimerService } from '../../timer.service';
+import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-timer',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatSnackBarModule, MatProgressBarModule],
+  imports: [CommonModule, MatButtonModule, MatProgressBarModule, MatTableModule, MatSnackBarModule, MatIconModule],
   templateUrl: './timer.component.html',
   styleUrls: ['./timer.component.css'],
   providers: [DatePipe]
 })
 export class TimerComponent implements OnInit {
   time: number = 0;
-  interval: any;
-  isRunning: boolean = false;
-  firstClockIn: Date | null = null;
-  clockOutTime: Date | null = null;
   totalWorkTime: number = 8 * 3600; // 8 hours in seconds
 
-  constructor(private snackBar: MatSnackBar, private datePipe: DatePipe, private timeTrackingService: TimeTrackingService) {}
+  displayedColumns: string[] = ['icon','label', 'value'];
+  dataSource: { label: string, value: string }[] = [];
+
+  constructor(private snackBar: MatSnackBar, private datePipe: DatePipe, private timerService: TimerService) {}
 
   ngOnInit(): void {
-    const today = new Date().toDateString();
-    const entry = this.timeTrackingService.getTimeEntries().find(e => e.date === today);
-    if (entry) {
-      this.time = entry.hoursWorked * 3600; // Convert hours to seconds
-    }
+    this.timerService.time$.subscribe(time => {
+      this.time = time;
+      this.updateDataSource();
+    });
+
+    this.updateDataSource(); // Initialize dataSource
   }
 
   startTimer() {
-    if (!this.isRunning) {
-      this.isRunning = true;
-      if (!this.firstClockIn) {
-        this.firstClockIn = new Date();
-      }
-      this.clockOutTime = null;
-      this.interval = setInterval(() => {
-        this.time++;
-      }, 1000);
-    }
+    this.timerService.startTimer();
   }
 
   stopTimer() {
-    if (this.isRunning) {
-      clearInterval(this.interval);
-      this.isRunning = false;
-      this.clockOutTime = new Date();
-      const today = new Date().toDateString();
-      const hoursWorked = this.time / 3600; // Convert seconds to hours
-      this.timeTrackingService.addOrUpdateEntry({ date: today, hoursWorked });
-      this.snackBar.open('Time saved successfully!', 'Close', { duration: 2000 });
-    }
+    this.timerService.stopTimer();
+    this.snackBar.open('Time saved successfully!', 'Close', { duration: 2000 });
+    this.updateDataSource();
   }
 
   resetTimer() {
-    clearInterval(this.interval);
-    this.time = 0;
-    this.isRunning = false;
-    this.firstClockIn = null;
-    this.clockOutTime = null;
-    const today = new Date().toDateString();
-    this.timeTrackingService.deleteEntry(today);
+    this.timerService.resetTimer();
+    this.updateDataSource();
+  }
+
+  private updateDataSource() {
+    this.dataSource = [
+      { label: 'Current Date', value: this.currentDate },
+      { 
+        label: 'First Clock In', 
+        value: this.timerService.getFirstClockIn() 
+          ? this.timerService.getFirstClockIn()!.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) 
+          : '---' 
+      },
+      { 
+        label: 'Clock Out', 
+        value: this.timerService.getClockOutTime() 
+          ? this.timerService.getClockOutTime()!.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) 
+          : '---' 
+      },
+      { label: 'All for Today', value: this.formattedTime },
+      { label: 'Time Left', value: this.timeLeft }
+    ];
   }
 
   get workPercentage(): number {

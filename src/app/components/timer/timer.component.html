@@ -1,18 +1,57 @@
 <div class="timer-container">
-  <div class="left-panel">
-    <div class="progress-container">
-      <mat-progress-bar mode="determinate" [value]="workPercentage"></mat-progress-bar>
-      <div class="progress-label">{{ workPercentage | number:'1.0-2' }}%</div>
+  <h1>User Activity</h1>
+  <div class="panel-container">
+    <div class="left-panel">
+      <div class="progress-container">
+        <div class="progress-label">
+          {{ workPercentage | number : "1.0-0" }}%
+        </div>
+        <mat-progress-bar
+          mode="determinate"
+          [value]="workPercentage"
+        ></mat-progress-bar>
+      </div>
+      <div class="button-container">
+          <button mat-raised-button color="primary" (click)="startTimer()">
+            Clock in
+          </button>
+          <button mat-raised-button color="warn" (click)="stopTimer()">
+            Clock out
+          </button>
+          <button mat-raised-button color="accent" (click)="resetTimer()">
+            Reset
+          </button>
+      </div>
     </div>
-  </div>
-  <div class="right-panel">
-    <h3>Current Date: {{ currentDate }}</h3>
-    <h2>First Clock In: {{ firstClockIn ? (firstClockIn | date:'HH:mm:ss') : '---' }}</h2>
-    <h2>Clock Out: {{ clockOutTime ? (clockOutTime | date:'HH:mm:ss') : '---' }}</h2>
-    <h2>All for Today: {{ formattedTime }}</h2>
-    <h2>Time Left: {{ timeLeft }}</h2>
-    <button mat-raised-button color="primary" (click)="startTimer()">Clock in</button>
-    <button mat-raised-button color="warn" (click)="stopTimer()">Clock out</button>
-    <button mat-raised-button color="accent" (click)="resetTimer()">Reset</button>
+    <div class="right-panel">
+        <table
+          mat-table
+          [dataSource]="dataSource"
+          class="mat-elevation-z8 timetable"
+        >
+        <ng-container matColumnDef="icon">
+          <th mat-header-cell *matHeaderCellDef>Icon</th>
+          <td mat-cell *matCellDef="let element">
+            <mat-icon *ngIf="element.label === 'Current Date'">calendar_today</mat-icon>
+            <mat-icon *ngIf="element.label === 'First Clock In'">access_time</mat-icon>
+            <mat-icon *ngIf="element.label === 'Clock Out'">exit_to_app</mat-icon>
+            <mat-icon *ngIf="element.label === 'All for Today'">timer</mat-icon>
+            <mat-icon *ngIf="element.label === 'Time Left'">hourglass_empty</mat-icon>
+          </td>
+        </ng-container>
+          <!-- Label Column -->
+          <ng-container matColumnDef="label">
+            <td mat-cell *matCellDef="let element">{{ element.label }}</td>
+          </ng-container>
+
+          <!-- Value Column -->
+          <ng-container matColumnDef="value">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let element">{{ element.value }}</td>
+          </ng-container>
+
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+    </div>
   </div>
 </div>

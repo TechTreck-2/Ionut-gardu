@@ -14,12 +14,17 @@ export class TimeTrackingService {
   timeEntries$ = this.timeEntriesSubject.asObservable();
 
   private loadData(): TimeEntry[] {
-    const savedData = localStorage.getItem('timeEntries');
-    return savedData ? JSON.parse(savedData) : [];
+    if (this.isLocalStorageAvailable()) {
+      const savedData = localStorage.getItem('timeEntries');
+      return savedData ? JSON.parse(savedData) : [];
+    }
+    return [];
   }
 
   private saveData(entries: TimeEntry[]) {
-    localStorage.setItem('timeEntries', JSON.stringify(entries));
+    if (this.isLocalStorageAvailable()) {
+      localStorage.setItem('timeEntries', JSON.stringify(entries));
+    }
   }
 
   getTimeEntries(): TimeEntry[] {
@@ -42,5 +47,16 @@ export class TimeTrackingService {
     const entries = this.getTimeEntries().filter(e => e.date !== date);
     this.timeEntriesSubject.next([...entries]);
     this.saveData(entries);
+  }
+
+  private isLocalStorageAvailable(): boolean {
+    try {
+      const testKey = '__test__';
+      localStorage.setItem(testKey, testKey);
+      localStorage.removeItem(testKey);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }
