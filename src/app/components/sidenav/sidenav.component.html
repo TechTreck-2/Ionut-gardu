@@ -15,9 +15,9 @@
               <mat-icon>settings</mat-icon>
               <span *ngIf="isExpanded">Tracking Situation</span>
             </a>
-            <a mat-list-item (click)="selectComponent('profile')">
+            <a mat-list-item (click)="selectComponent('vacation')">
               <mat-icon>person</mat-icon>
-              <span *ngIf="isExpanded">Profile</span>
+              <span *ngIf="isExpanded">Vacation Leave</span>
             </a>
           </mat-nav-list>
       </mat-sidenav>
@@ -33,9 +33,8 @@
           
         </div>
         
-        <div *ngIf="selectedComponent === 'profile'">
-          <h2>Profile</h2>
-          <p>Manage your profile information.</p>
+        <div *ngIf="selectedComponent === 'vacation'">
+          <h2>Vacation Leave</h2>
         </div>
       </mat-sidenav-content>
   </mat-sidenav-container>

@@ -20,7 +20,8 @@ export class TimerComponent implements OnInit {
 
   displayedColumns: string[] = ['icon','label', 'value'];
   dataSource: { label: string, value: string }[] = [];
-
+  firstClockInDisplay: string = '---';
+  clockOutTimeDisplay: string = '---';
   constructor(private snackBar: MatSnackBar, private datePipe: DatePipe, private timerService: TimerService) {}
 
   ngOnInit(): void {
@@ -28,12 +29,19 @@ export class TimerComponent implements OnInit {
       this.time = time;
       this.updateDataSource();
     });
+    this.timerService.loadState();
+  }
 
-    this.updateDataSource(); // Initialize dataSource
+
+  logLocalStorageContent() {
+    this.timerService.logLocalStorageContent();
   }
 
   startTimer() {
     this.timerService.startTimer();
+    this.snackBar.open('Time tracking started successfully!', 'Close', { duration: 2000 });
+    this.updateDataSource();
+
   }
 
   stopTimer() {
@@ -83,6 +91,9 @@ export class TimerComponent implements OnInit {
     const hours = Math.floor(remainingTime / 3600);
     const minutes = Math.floor((remainingTime % 3600) / 60);
     const seconds = remainingTime % 60;
+    if (remainingTime <= 0) {
+      return '00:00:00';
+    }
     return `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
   }
 

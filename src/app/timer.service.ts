@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, interval, Subscription } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class TimerService {
   private timeSubject = new BehaviorSubject<number>(0);
@@ -21,14 +21,8 @@ export class TimerService {
       this.isRunning = true;
       if (!this.firstClockIn) {
         this.firstClockIn = new Date();
-        if (this.isLocalStorageAvailable()) {
-          localStorage.setItem('firstClockIn', this.firstClockIn.toISOString());
-        }
       }
       this.clockOutTime = null;
-      if (this.isLocalStorageAvailable()) {
-        localStorage.removeItem('clockOutTime');
-      }
       this.intervalSubscription = interval(1000).subscribe(() => {
         this.timeSubject.next(this.timeSubject.value + 1);
         this.saveState();
@@ -40,9 +34,6 @@ export class TimerService {
     if (this.isRunning) {
       this.isRunning = false;
       this.clockOutTime = new Date();
-      if (this.isLocalStorageAvailable()) {
-        localStorage.setItem('clockOutTime', this.clockOutTime.toISOString());
-      }
       this.intervalSubscription?.unsubscribe();
       this.saveState();
     }
@@ -54,33 +45,167 @@ export class TimerService {
     this.clockOutTime = null;
     this.timeSubject.next(0);
     this.intervalSubscription?.unsubscribe();
+
     if (this.isLocalStorageAvailable()) {
-      localStorage.removeItem('firstClockIn');
-      localStorage.removeItem('clockOutTime');
-      localStorage.removeItem('timerTime');
+      const today = new Date().toDateString();
+      const savedData = localStorage.getItem('timeEntries');
+      let timeEntries = savedData ? JSON.parse(savedData) : [];
+
+      const entryIndex = timeEntries.findIndex(
+        (entry: any) => entry.date === today
+      );
+
+      if (entryIndex > -1) {
+        timeEntries[entryIndex] = {
+          date: today,
+          hoursWorked: 0,
+          clockInTime: '---',
+          clockOutTime: '---',
+        };
+      }
+      localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
     }
   }
 
-  private saveState() {
+  updateTimeEntry(
+    date: string,
+    hoursWorked: number,
+    clockInTime?: string,
+    clockOutTime?: string
+  ) {
     if (this.isLocalStorageAvailable()) {
-      localStorage.setItem('timerTime', this.timeSubject.value.toString());
+      const savedData = localStorage.getItem('timeEntries');
+      let timeEntries = savedData ? JSON.parse(savedData) : [];
+
+      const entryIndex = timeEntries.findIndex(
+        (entry: any) => entry.date === date
+      );
+      const entry = {
+        date: date,
+        hoursWorked: hoursWorked,
+        clockInTime: clockInTime || '---',
+        clockOutTime: clockOutTime || '---',
+      };
+
+      if (entryIndex > -1) {
+        timeEntries[entryIndex] = entry;
+      } else {
+        timeEntries.push(entry);
+      }
+
+      localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
     }
   }
 
-  private loadState() {
+  deleteTimeEntry(date: string) {
     if (this.isLocalStorageAvailable()) {
-      const savedTime = localStorage.getItem('timerTime');
-      if (savedTime) {
-        this.timeSubject.next(parseInt(savedTime, 10));
+      const savedData = localStorage.getItem('timeEntries');
+      if (savedData) {
+        let timeEntries = JSON.parse(savedData);
+
+        console.log('Before deletion:', timeEntries);
+
+        timeEntries = timeEntries.filter((entry: any) => entry.date !== date);
+
+        console.log('After deletion:', timeEntries);
+
+        localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+      } else {
+        console.log('No time entries found in local storage.');
       }
-      const savedFirstClockIn = localStorage.getItem('firstClockIn');
-      if (savedFirstClockIn) {
-        this.firstClockIn = new Date(savedFirstClockIn);
+    } else {
+      console.log('Local storage is not available.');
+    }
+  }
+
+   saveState() {
+    if (this.isLocalStorageAvailable()) {
+      const today = new Date().toDateString();
+      const savedData = localStorage.getItem('timeEntries');
+      let timeEntries = savedData ? JSON.parse(savedData) : [];
+
+      const entryIndex = timeEntries.findIndex(
+        (entry: any) => entry.date === today
+      );
+      const entry = {
+        date: today,
+        hoursWorked: this.timeSubject.value / 3600, // Convert seconds to hours
+        clockInTime: this.firstClockIn
+          ? this.firstClockIn.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false,
+            })
+          : '---',
+        clockOutTime: this.clockOutTime
+          ? this.clockOutTime.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false,
+            })
+          : '---',
+      };
+
+      if (entryIndex > -1) {
+        timeEntries[entryIndex] = entry;
+      } else {
+        timeEntries.push(entry);
       }
-      const savedClockOutTime = localStorage.getItem('clockOutTime');
-      if (savedClockOutTime) {
-        this.clockOutTime = new Date(savedClockOutTime);
+
+      localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+    }
+  }
+
+  private parseTimeStringToToday(timeString: string): Date | null {
+    if (timeString === '---') {
+      return null;
+    }
+    const [hours, minutes, seconds] = timeString.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, seconds, 0);
+    return date;
+  }
+
+  loadState() {
+    if (this.isLocalStorageAvailable()) {
+      const savedData = localStorage.getItem('timeEntries');
+      const today = new Date().toDateString();
+
+      if (savedData) {
+        const timeEntries = JSON.parse(savedData);
+        const todayEntry = timeEntries.find(
+          (entry: any) => entry.date === today
+        );
+
+        if (todayEntry) {
+          this.timeSubject.next(todayEntry.hoursWorked * 3600); // Convert hours to seconds
+          this.firstClockIn = this.parseTimeStringToToday(
+            todayEntry.clockInTime
+          );
+          this.clockOutTime = this.parseTimeStringToToday(
+            todayEntry.clockOutTime
+          );
+        } else {
+          this.resetTimer();
+        }
+      } else {
+        this.resetTimer();
       }
+    }
+  }
+
+  logLocalStorageContent() {
+    if (this.isLocalStorageAvailable()) {
+      const timeEntries = localStorage.getItem('timeEntries');
+      console.log('Local Storage Content:');
+      console.log(
+        'Time Entries:',
+        timeEntries ? JSON.parse(timeEntries) : 'No entries'
+      );
+    } else {
+      console.log('Local storage is not available.');
     }
   }
 
