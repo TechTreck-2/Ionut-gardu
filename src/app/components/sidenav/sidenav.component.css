@@ -3,13 +3,17 @@
     height: 93vh;
     margin: 0px;
     border: 0px;
-    background: #eee;
+    background: #fff;
   }
 
   mat-sidenav {
     width: 250px;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif!important;
   }
 
-  mat-sidenav.collapsed {
-    width: 60px;
+  .custom-sidenav {
+    border-radius: 0;
+    box-shadow: 0 1px 22px #0000001a;
   }
+  
+
