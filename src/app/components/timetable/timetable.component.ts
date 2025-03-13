@@ -14,6 +14,8 @@ import { TimerService } from '../../timer.service';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
+import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
+
 interface TimeEntry {
   date: string;
   hoursWorked: number;
@@ -34,18 +36,29 @@ interface TimeEntry {
     MatFormFieldModule,
     FormsModule,
     MatDialogModule,
-    MatPaginatorModule 
+    MatPaginatorModule,
+    MatSortModule,
   ],
   templateUrl: './timetable.component.html',
-  styleUrls: ['./timetable.component.css']
+  styleUrls: ['./timetable.component.css'],
 })
 export class TimeTrackingComponent implements OnInit {
-  displayedColumns: string[] = ['date', 'clockInTime', 'clockOutTime', 'hoursWorked', 'actions'];
-  dataSource = new MatTableDataSource<TimeEntry>(); // Initialize here
+  displayedColumns: string[] = [
+    'actions',
+    'date',
+    'clockInTime',
+    'clockOutTime',
+    'hoursWorked',
+    'status',
+  ];
+  dataSource = new MatTableDataSource<TimeEntry>();
   selectedDate: Date | null = null;
   newHours: number | null = null;
-
+  startDate: Date | null = null;
+  endDate: Date | null = null;
+  filteredData: TimeEntry[] = [...this.dataSource.data];
   @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
 
   constructor(
     private timerService: TimerService,
@@ -55,22 +68,41 @@ export class TimeTrackingComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadFromLocalStorage();
-    setTimeout(() => this.dataSource.paginator = this.paginator);
+    setTimeout(() => (this.dataSource.paginator = this.paginator));
+    this.dataSource.sort = this.sort;
 
-
-    this.timerService.time$.subscribe(time => {
+    this.timerService.time$.subscribe((time) => {
       const today = new Date().toDateString();
-      const clockInTime = this.timerService.getFirstClockIn()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-      const clockOutTime = this.timerService.getClockOutTime()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      
+      this.filterEntriesByDate();
+
+      const clockInTime = this.timerService
+        .getFirstClockIn()
+        ?.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+        });
+      const clockOutTime = this.timerService
+        .getClockOutTime()
+        ?.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+        });
 
       const entry: TimeEntry = {
         date: today,
         hoursWorked: time / 3600, // Convert seconds to hours
         clockInTime: clockInTime || '---',
-        clockOutTime: clockOutTime || '---'
+        clockOutTime: clockOutTime || '---',
       };
 
-      const existingEntryIndex = this.dataSource.data.findIndex(e => e.date === today);
+      const existingEntryIndex = this.dataSource.data.findIndex(
+        (e) => e.date === today
+      );
       if (existingEntryIndex > -1) {
         this.dataSource.data[existingEntryIndex] = entry;
       } else {
@@ -81,36 +113,41 @@ export class TimeTrackingComponent implements OnInit {
     });
   }
 
-  addEntry() {
-    if (this.selectedDate && this.newHours !== null && this.newHours >= 0 && this.newHours <= 24) {
-      const dateString = this.selectedDate.toDateString();
-      const entry: TimeEntry = {
-        date: dateString,
-        hoursWorked: this.newHours,
-        clockInTime: '---',
-        clockOutTime: '---'
-      };
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort;
+  }
 
-      const existingEntryIndex = this.dataSource.data.findIndex(e => e.date === dateString);
-      if (existingEntryIndex > -1) {
-        this.dataSource.data[existingEntryIndex] = entry;
-      } else {
-        this.dataSource.data = [...this.dataSource.data, entry];
-      }
+  filterEntriesByDate() {
+    this.filteredData = [...this.dataSource.data];
 
-      this.timerService.updateTimeEntry(dateString, this.newHours);
+    if (this.startDate && this.endDate) {
+      const start = this.startDate.getTime();
+      const end = this.endDate.getTime();
 
-      this.saveToLocalStorage();
-      this.loadFromLocalStorage();
-      this.snackBar.open('Entry added/updated successfully!', 'Close', { duration: 2000 });
-      
-      // Reset inputs
-      this.selectedDate = null;
-      this.newHours = null;
+      this.filteredData = this.filteredData.filter((entry) => {
+        const entryDate = new Date(entry.date).getTime();
+        return entryDate >= start && entryDate <= end;
+      });
     } else {
-      this.snackBar.open('Please enter a valid date and hours (0-24).', 'Close', { duration: 2000 });
+      this.loadFromLocalStorage();
     }
-    this.loadFromLocalStorage();
+    console.log('Filtered data:', this.filteredData);
+  }
+
+  announceSortChange(sortState: Sort) {
+    if (sortState.direction) {
+      this.snackBar.open(
+        `Sorted ${sortState.active} ${sortState.direction}`,
+        'Close',
+        {
+          duration: 2000,
+        }
+      );
+    } else {
+      this.snackBar.open('Sorting cleared', 'Close', {
+        duration: 2000,
+      });
+    }
   }
 
   editEntry(entry: TimeEntry) {
@@ -118,54 +155,69 @@ export class TimeTrackingComponent implements OnInit {
       width: '500px',
       data: {
         clockInTime: entry.clockInTime,
-        clockOutTime: entry.clockOutTime
-      }
+        clockOutTime: entry.clockOutTime,
+      },
     });
-  
-    dialogRef.afterClosed().subscribe(result => {
-      if (result && this.validateTimeFormat(result.clockInTime) && this.validateTimeFormat(result.clockOutTime)) {
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (
+        result &&
+        this.validateTimeFormat(result.clockInTime) &&
+        this.validateTimeFormat(result.clockOutTime)
+      ) {
         entry.clockInTime = result.clockInTime;
         entry.clockOutTime = result.clockOutTime;
-        entry.hoursWorked = this.calculateHoursWorked(result.clockInTime, result.clockOutTime);
+        entry.hoursWorked = this.calculateHoursWorked(
+          result.clockInTime,
+          result.clockOutTime
+        );
         this.dataSource.data = [...this.dataSource.data]; // Reassign to trigger change detection
         this.saveToLocalStorage();
-        this.snackBar.open('Entry updated successfully!', 'Close', { duration: 2000 });
+        this.snackBar.open('Entry updated successfully!', 'Close', {
+          duration: 2000,
+        });
       } else {
-        this.snackBar.open('Invalid time format. Please use HH:mm:ss.', 'Close', { duration: 2000 });
+        this.snackBar.open(
+          'Invalid time format. Please use HH:mm:ss.',
+          'Close',
+          { duration: 2000 }
+        );
       }
     });
   }
 
   deleteEntry(entry: TimeEntry) {
     this.timerService.deleteTimeEntry(entry.date);
-    this.snackBar.open('Entry deleted successfully!', 'Close', { duration: 2000 });
+    this.snackBar.open('Entry deleted successfully!', 'Close', {
+      duration: 2000,
+    });
     this.loadFromLocalStorage();
   }
 
   private saveToLocalStorage() {
-  // Extract only the data array from the dataSource
-  const dataToSave = this.dataSource.data.map(entry => ({
-    date: entry.date,
-    hoursWorked: entry.hoursWorked,
-    clockInTime: entry.clockInTime,
-    clockOutTime: entry.clockOutTime
-  }));
+    // Extract only the data array from the dataSource
+    const dataToSave = this.dataSource.data.map((entry) => ({
+      date: entry.date,
+      hoursWorked: entry.hoursWorked,
+      clockInTime: entry.clockInTime,
+      clockOutTime: entry.clockOutTime,
+    }));
 
-  // Save the extracted data to local storage
-  localStorage.setItem('timeEntries', JSON.stringify(dataToSave));
-}
-
-private loadFromLocalStorage() {
-  const savedData = localStorage.getItem('timeEntries');
-  if (savedData) {
-    const parsedData: TimeEntry[] = JSON.parse(savedData);
-    this.dataSource.data = parsedData;
-    console.log('Loaded data:', this.dataSource.data); // Debugging log
-  } else {
-    this.dataSource.data = [];
-    console.log('No data found in local storage.'); // Debugging log
+    // Save the extracted data to local storage
+    localStorage.setItem('timeEntries', JSON.stringify(dataToSave));
   }
-}
+
+  private loadFromLocalStorage() {
+    const savedData = localStorage.getItem('timeEntries');
+    if (savedData) {
+      const parsedData: TimeEntry[] = JSON.parse(savedData);
+      this.dataSource.data = parsedData;
+      console.log('Loaded data:', this.dataSource.data); // Debugging log
+    } else {
+      this.dataSource.data = [];
+      console.log('No data found in local storage.'); // Debugging log
+    }
+  }
 
   calculateHoursWorked(clockIn: string, clockOut: string): number {
     const clockInParts = clockIn.split(':').map(Number);
@@ -189,6 +241,27 @@ private loadFromLocalStorage() {
     const diffInHours = diffInMilliseconds / 1000 / 3600; // Convert milliseconds to hours
     this.saveToLocalStorage();
     return diffInHours;
+  }
+
+  isWeekend(date: Date): boolean {
+    const dayOfWeek = date.getDay(); // Get the day of the week (0 for Sunday, 6 for Saturday)
+    return dayOfWeek === 0 || dayOfWeek === 6; // Return true if it's Saturday or Sunday
+  }
+
+  computeStatus(entry: TimeEntry): string {
+    const seconds = entry.hoursWorked;
+    const day = entry.date;
+    if (this.isWeekend(new Date(day))) {
+      return 'Weekend';
+    } else if (seconds < 0) {
+      return 'Error';
+    } else if (seconds === 0) {
+      return 'Untracked';
+    } else if (seconds < 8) {
+      return 'Partially tracked';
+    } else {
+      return 'Tracked';
+    }
   }
 
   validateTimeFormat(time: string): boolean {

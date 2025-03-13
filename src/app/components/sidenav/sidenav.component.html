@@ -1,41 +1,41 @@
 <mat-toolbar style="background-color: #005cbb; color: #FFF;">
-    <button mat-icon-button (click)="toggleSidebar(); sidenav.toggle()">
-      <mat-icon style="color: #FFF;">menu</mat-icon>
-    </button>
-    Timetracking App
-  </mat-toolbar>
+  <button mat-icon-button (click)="toggleSidebar(); sidenav.toggle()">
+    <mat-icon style="color: #FFF;">menu</mat-icon>
+  </button>
+  Timetracking App
+</mat-toolbar>
+
 <mat-sidenav-container class="example-container" style="border-radius: 0;">
-    <mat-sidenav #sidenav mode="side" opened class="custom-sidenav">
-        <mat-nav-list>
-            <a mat-list-item (click)="selectComponent('dashboard')">
-              <mat-icon>dashboard</mat-icon>
-              <span *ngIf="isExpanded" >Dashboard</span>
-            </a>
-            <a mat-list-item (click)="selectComponent('table')">
-              <mat-icon>settings</mat-icon>
-              <span *ngIf="isExpanded">Tracking Situation</span>
-            </a>
-            <a mat-list-item (click)="selectComponent('vacation')">
-              <mat-icon>person</mat-icon>
-              <span *ngIf="isExpanded">Vacation Leave</span>
-            </a>
-          </mat-nav-list>
-      </mat-sidenav>
-    
-      <mat-sidenav-content>
-    
-        <div *ngIf="selectedComponent === 'dashboard'">
-          <app-timer></app-timer>
-        </div>
-        
-        <div *ngIf="selectedComponent === 'table'">
-          <app-time-table></app-time-table>
-          
-        </div>
-        
-        <div *ngIf="selectedComponent === 'vacation'">
-          <h2>Vacation Leave</h2>
-        </div>
-      </mat-sidenav-content>
-  </mat-sidenav-container>
-  
+  <mat-sidenav #sidenav mode="side" opened class="custom-sidenav">
+    <mat-nav-list>
+      <a mat-list-item 
+         (click)="selectComponent('dashboard')">
+        <mat-icon [ngClass]="{'selected-text': selectedComponent === 'dashboard'}">dashboard</mat-icon>
+        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'dashboard'}">Dashboard</span>
+
+      </a>
+      <a mat-list-item 
+         (click)="selectComponent('table')">
+        <mat-icon [ngClass]="{'selected-text': selectedComponent === 'table'}">settings</mat-icon>
+        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'table'}">Tracking Situation</span>
+      </a>
+      <a mat-list-item 
+         (click)="selectComponent('vacation')">
+        <mat-icon [ngClass]="{'selected-text': selectedComponent === 'vacation'}">person</mat-icon>
+        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'vacation'}">Vacation Leave</span>
+      </a>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <div *ngIf="selectedComponent === 'dashboard'">
+      <app-timer></app-timer>
+    </div>
+    <div *ngIf="selectedComponent === 'table'">
+      <app-time-table></app-time-table>
+    </div>
+    <div *ngIf="selectedComponent === 'vacation'">
+      <h2>Vacation Leave</h2>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -37,9 +37,13 @@ export class TimerComponent implements OnInit {
     this.timerService.logLocalStorageContent();
   }
 
+  get isRunning() {
+    return this.timerService.runningStatus;
+  }
+
   startTimer() {
-    this.timerService.startTimer();
-    this.snackBar.open('Time tracking started successfully!', 'Close', { duration: 2000 });
+    const statusMessage = this.timerService.startTimer();
+    this.snackBar.open(statusMessage, 'Close', { duration: 2000 });
     this.updateDataSource();
 
   }

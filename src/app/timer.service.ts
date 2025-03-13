@@ -16,18 +16,34 @@ export class TimerService {
     this.loadState();
   }
 
+  get runningStatus() {
+    return this.isRunning;
+  }
+
   startTimer() {
     if (!this.isRunning) {
+      const newClockInDate = new Date();
+  
+      if (this.firstClockIn && this.clockOutTime) {
+        if (newClockInDate > this.firstClockIn && newClockInDate < this.clockOutTime) {
+          return "The new clock-in date is between the existing clock-in and clock-out times.";
+        }
+      }
+  
       this.isRunning = true;
       if (!this.firstClockIn) {
-        this.firstClockIn = new Date();
+        this.firstClockIn = newClockInDate;
       }
       this.clockOutTime = null;
       this.intervalSubscription = interval(1000).subscribe(() => {
         this.timeSubject.next(this.timeSubject.value + 1);
         this.saveState();
       });
+  
+      return "Tracking started.";
     }
+  
+    return "Tracking is already running.";
   }
 
   stopTimer() {

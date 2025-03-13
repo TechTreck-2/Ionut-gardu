@@ -12,10 +12,10 @@
         ></mat-progress-bar>
       </div>
       <div class="button-container">
-          <button mat-raised-button color="primary" (click)="startTimer()">
+          <button mat-raised-button color="primary" (click)="startTimer()" [disabled]="isRunning">
             Clock in
           </button>
-          <button mat-raised-button color="warn" (click)="stopTimer()">
+          <button mat-raised-button color="warn" (click)="stopTimer()" [disabled]="!isRunning">
             Clock out
           </button>
           <button mat-raised-button color="accent" (click)="resetTimer()">
