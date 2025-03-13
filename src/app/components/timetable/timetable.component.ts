@@ -52,11 +52,11 @@ export class TimeTrackingComponent implements OnInit {
     'status',
   ];
   dataSource = new MatTableDataSource<TimeEntry>();
+  filteredData = new MatTableDataSource<TimeEntry>();
   selectedDate: Date | null = null;
   newHours: number | null = null;
   startDate: Date | null = null;
   endDate: Date | null = null;
-  filteredData: TimeEntry[] = [...this.dataSource.data];
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -68,8 +68,9 @@ export class TimeTrackingComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadFromLocalStorage();
-    setTimeout(() => (this.dataSource.paginator = this.paginator));
-    this.dataSource.sort = this.sort;
+    const date = new Date();
+    this.startDate = new Date(date);
+    this.endDate = new Date(date);
 
     this.timerService.time$.subscribe((time) => {
       const today = new Date().toDateString();
@@ -114,24 +115,32 @@ export class TimeTrackingComponent implements OnInit {
   }
 
   ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort;
+    this.filteredData.paginator = this.paginator; // Set paginator for main data source
+    this.filteredData.sort = this.sort; // Set sort for main data source
   }
 
   filterEntriesByDate() {
-    this.filteredData = [...this.dataSource.data];
+    const currentData = [...this.dataSource.data];
 
     if (this.startDate && this.endDate) {
-      const start = this.startDate.getTime();
-      const end = this.endDate.getTime();
+      const start = new Date(this.startDate);
+      start.setHours(0, 0, 0, 0); // Set to midnight
 
-      this.filteredData = this.filteredData.filter((entry) => {
+      const end = new Date(this.endDate);
+      end.setHours(23, 59, 59, 999); // Set to the end of the day
+
+      // Filter the local copy based on the selected dates
+      const filteredEntries = currentData.filter((entry) => {
         const entryDate = new Date(entry.date).getTime();
-        return entryDate >= start && entryDate <= end;
+        return entryDate >= start.getTime() && entryDate <= end.getTime();
       });
+
+      // Set the filteredData to a new MatTableDataSource with the filtered results
+      this.filteredData = new MatTableDataSource(filteredEntries);
+      this.filteredData.paginator = this.paginator; // Link paginator to filteredData
     } else {
-      this.loadFromLocalStorage();
+      this.loadFromLocalStorage(); // Reload all entries if no dates are set
     }
-    console.log('Filtered data:', this.filteredData);
   }
 
   announceSortChange(sortState: Sort) {
@@ -158,21 +167,30 @@ export class TimeTrackingComponent implements OnInit {
         clockOutTime: entry.clockOutTime,
       },
     });
-
+  
     dialogRef.afterClosed().subscribe((result) => {
       if (
         result &&
         this.validateTimeFormat(result.clockInTime) &&
         this.validateTimeFormat(result.clockOutTime)
       ) {
+        // Update the entry in filteredData
         entry.clockInTime = result.clockInTime;
         entry.clockOutTime = result.clockOutTime;
         entry.hoursWorked = this.calculateHoursWorked(
           result.clockInTime,
           result.clockOutTime
         );
-        this.dataSource.data = [...this.dataSource.data]; // Reassign to trigger change detection
-        this.saveToLocalStorage();
+  
+        // Update the corresponding entry in dataSource
+        const originalEntryIndex = this.dataSource.data.findIndex(
+          (e) => e.date === entry.date
+        );
+        if (originalEntryIndex > -1) {
+          this.dataSource.data[originalEntryIndex] = entry; // Update original data
+        }
+  
+        this.saveToLocalStorage(); // Save changes to local storage
         this.snackBar.open('Entry updated successfully!', 'Close', {
           duration: 2000,
         });
