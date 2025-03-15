@@ -1,15 +1,17 @@
-<h1 mat-dialog-title>Edit Time Entry</h1>
-<div mat-dialog-content>
-  <mat-form-field>
-    <mat-label>Clock In Time</mat-label>
-    <input matInput [(ngModel)]="data.clockInTime" placeholder="HH:mm:ss">
-  </mat-form-field>
-  <mat-form-field>
-    <mat-label>Clock Out Time</mat-label>
-    <input matInput [(ngModel)]="data.clockOutTime" placeholder="HH:mm:ss">
-  </mat-form-field>
-</div>
-<div mat-dialog-actions>
-  <button mat-button (click)="onNoClick()">Cancel</button>
-  <button mat-button (click)="onSaveClick()" cdkFocusInitial>Save</button>
+<div class="dialog-container">
+  <h1 mat-dialog-title style="font-weight: 400;">Edit Time Entry</h1>
+  <div mat-dialog-content>
+    <mat-form-field>
+      <mat-label>Clock In Time</mat-label>
+      <input matInput [(ngModel)]="data.clockInTime" placeholder="HH:mm:ss" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Clock Out Time</mat-label>
+      <input matInput [(ngModel)]="data.clockOutTime" placeholder="HH:mm:ss" />
+    </mat-form-field>
+  </div>
+  <div mat-dialog-actions>
+    <button mat-button (click)="onNoClick()">Cancel</button>
+    <button mat-button (click)="onSaveClick()" cdkFocusInitial>Save</button>
+  </div>
 </div>

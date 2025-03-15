@@ -24,3 +24,8 @@ mat-button {
 ::ng-deep .mat-card, ::ng-deep .mat-toolbar, ::ng-deep .mat-mdc-table {
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
 }
+
+h1 {
+  color: #333;
+  font-weight: 400;
+}

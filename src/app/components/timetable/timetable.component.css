@@ -3,10 +3,7 @@
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
 }
 
-.container-wrapper h1 {
-  color: black;
-  font-weight: 400;
-}
+
 .time-tracking-container {
   display: flex;
   flex-direction: row;

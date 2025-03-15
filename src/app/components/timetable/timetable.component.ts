@@ -161,7 +161,6 @@ export class TimeTrackingComponent implements OnInit {
 
   editEntry(entry: TimeEntry) {
     const dialogRef = this.dialog.open(EditTimeDialogComponent, {
-      width: '500px',
       data: {
         clockInTime: entry.clockInTime,
         clockOutTime: entry.clockOutTime,

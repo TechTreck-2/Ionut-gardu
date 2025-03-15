@@ -5,24 +5,24 @@
   Timetracking App
 </mat-toolbar>
 
-<mat-sidenav-container class="example-container" style="border-radius: 0;">
+<mat-sidenav-container class="sidenav-container" style="border-radius: 0;">
   <mat-sidenav #sidenav mode="side" opened class="custom-sidenav">
     <mat-nav-list>
       <a mat-list-item 
          (click)="selectComponent('dashboard')">
-        <mat-icon [ngClass]="{'selected-text': selectedComponent === 'dashboard'}">dashboard</mat-icon>
-        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'dashboard'}">Dashboard</span>
+        <mat-icon [ngClass]="{'selected-text': selectedComponent === 'dashboard' , 'sidenav-text': selectedComponent !== 'dashboard'}">dashboard</mat-icon>
+        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'dashboard', 'sidenav-text': selectedComponent !== 'dashboard'}">Dashboard</span>
 
       </a>
       <a mat-list-item 
          (click)="selectComponent('table')">
-        <mat-icon [ngClass]="{'selected-text': selectedComponent === 'table'}">settings</mat-icon>
-        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'table'}">Tracking Situation</span>
+        <mat-icon [ngClass]="{'selected-text': selectedComponent === 'table' , 'sidenav-text': selectedComponent !== 'table'}">settings</mat-icon>
+        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'table' , 'sidenav-text': selectedComponent !== 'table'}">Tracking Situation</span>
       </a>
       <a mat-list-item 
          (click)="selectComponent('vacation')">
-        <mat-icon [ngClass]="{'selected-text': selectedComponent === 'vacation'}">person</mat-icon>
-        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'vacation'}">Vacation Leave</span>
+        <mat-icon class="sidenav-text"[ngClass]="{'selected-text': selectedComponent === 'vacation' , 'sidenav-text': selectedComponent !== 'vacation'}">person</mat-icon>
+        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'vacation' , 'sidenav-text': selectedComponent !== 'vacation'}">Vacation Leave</span>
       </a>
     </mat-nav-list>
   </mat-sidenav>

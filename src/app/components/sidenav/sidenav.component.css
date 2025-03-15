@@ -1,4 +1,4 @@
-.example-container {
+.sidenav-container {
     width: auto;
     height: 93vh;
     margin: 0px;
@@ -18,5 +18,9 @@
   
   .selected-text {
     color: #004a99; 
+  }
+
+  .sidenav-text{
+    color: #333!important;
   }
 
