@@ -261,15 +261,12 @@ export class TimeTrackingComponent implements OnInit {
     return diffInHours;
   }
 
-  isWeekend(date: Date): boolean {
-    const dayOfWeek = date.getDay(); // Get the day of the week (0 for Sunday, 6 for Saturday)
-    return dayOfWeek === 0 || dayOfWeek === 6; // Return true if it's Saturday or Sunday
-  }
+  
 
   computeStatus(entry: TimeEntry): string {
     const seconds = entry.hoursWorked;
     const day = entry.date;
-    if (this.isWeekend(new Date(day))) {
+    if (this.timerService.isWeekend(new Date(day))) {
       return 'Weekend';
     } else if (seconds < 0) {
       return 'Error';

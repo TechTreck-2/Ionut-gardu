@@ -243,4 +243,9 @@ export class TimerService {
   getClockOutTime(): Date | null {
     return this.clockOutTime;
   }
+
+  isWeekend(date: Date): boolean {
+    const dayOfWeek = date.getDay(); // Get the day of the week (0 for Sunday, 6 for Saturday)
+    return dayOfWeek === 0 || dayOfWeek === 6; // Return true if it's Saturday or Sunday
+  }
 }

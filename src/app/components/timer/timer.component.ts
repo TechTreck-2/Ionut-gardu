@@ -22,6 +22,7 @@ export class TimerComponent implements OnInit {
   dataSource: { label: string, value: string }[] = [];
   firstClockInDisplay: string = '---';
   clockOutTimeDisplay: string = '---';
+  isWeekend: boolean = false;
   constructor(private snackBar: MatSnackBar, private datePipe: DatePipe, private timerService: TimerService) {}
 
   ngOnInit(): void {
@@ -108,4 +109,7 @@ export class TimerComponent implements OnInit {
   private pad(num: number): string {
     return num < 10 ? '0' + num : num.toString();
   }
+
+  checkisWeekend(){
+    this.isWeekend = this.timerService.isWeekend(new Date());  }
 }
