@@ -74,7 +74,7 @@ export class TimeTrackingComponent implements OnInit {
 
     this.timerService.time$.subscribe((time) => {
       const today = new Date().toDateString();
-      
+
       this.filterEntriesByDate();
 
       const clockInTime = this.timerService
@@ -115,8 +115,12 @@ export class TimeTrackingComponent implements OnInit {
   }
 
   ngAfterViewInit(): void {
-    this.filteredData.paginator = this.paginator; // Set paginator for main data source
-    this.filteredData.sort = this.sort; // Set sort for main data source
+    setTimeout(() => {
+      this.filteredData.paginator = this.paginator;
+      this.filteredData.sort = this.sort;
+      this.sort.active = 'date'; // Set the default active sort column
+      this.sort.direction = 'asc';
+    }, 0);
   }
 
   filterEntriesByDate() {
@@ -137,7 +141,26 @@ export class TimeTrackingComponent implements OnInit {
 
       // Set the filteredData to a new MatTableDataSource with the filtered results
       this.filteredData = new MatTableDataSource(filteredEntries);
+
+      this.filteredData.sortingDataAccessor = (item, property) => {
+        switch (property) {
+          case 'date':
+            return new Date(item.date).getTime(); // Convert date to timestamp for comparison
+          case 'hoursWorked':
+            return item.hoursWorked;
+          case 'clockInTime':
+            return item.clockInTime ? item.clockInTime : ''; // Return empty string if undefined
+          case 'clockOutTime':
+            return item.clockOutTime ? item.clockOutTime : ''; // Return empty string if undefined
+          default:
+            return ''; // Return empty string for unsupported properties
+        }
+      };
+
       this.filteredData.paginator = this.paginator; // Link paginator to filteredData
+      console.log('Data before sort:', this.filteredData.data);
+      this.filteredData.sort = this.sort;
+      console.log('Data after sort:', this.filteredData.data);
     } else {
       this.loadFromLocalStorage(); // Reload all entries if no dates are set
     }
@@ -166,7 +189,7 @@ export class TimeTrackingComponent implements OnInit {
         clockOutTime: entry.clockOutTime,
       },
     });
-  
+
     dialogRef.afterClosed().subscribe((result) => {
       if (
         result &&
@@ -180,7 +203,7 @@ export class TimeTrackingComponent implements OnInit {
           result.clockInTime,
           result.clockOutTime
         );
-  
+
         // Update the corresponding entry in dataSource
         const originalEntryIndex = this.dataSource.data.findIndex(
           (e) => e.date === entry.date
@@ -188,7 +211,7 @@ export class TimeTrackingComponent implements OnInit {
         if (originalEntryIndex > -1) {
           this.dataSource.data[originalEntryIndex] = entry; // Update original data
         }
-  
+
         this.saveToLocalStorage(); // Save changes to local storage
         this.snackBar.open('Entry updated successfully!', 'Close', {
           duration: 2000,
@@ -259,8 +282,6 @@ export class TimeTrackingComponent implements OnInit {
     this.saveToLocalStorage();
     return diffInHours;
   }
-
-  
 
   computeStatus(entry: TimeEntry): string {
     const seconds = entry.hoursWorked;
