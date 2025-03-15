@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { EditTimeDialogComponent } from '../edit-time-dialog/edit-time-dialog.component';
-import { TimerService } from '../../timer.service';
+import { TimerService } from '../../services/timer.service';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';

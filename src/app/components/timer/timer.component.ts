@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { CommonModule, DatePipe } from '@angular/common';
-import { TimerService } from '../../timer.service';
+import { TimerService } from '../../services/timer.service';
 import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-timer',
