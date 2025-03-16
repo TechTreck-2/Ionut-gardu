@@ -1,0 +1,13 @@
+<div class="container">
+  <h1>Vacation Planning</h1>
+  <button mat-raised-button color="primary" (click)="openModal()">
+    + Create Request
+  </button>
+
+  <div class="shadow-container">
+    <app-mat-table
+      [entries]="entries"
+      [displayedColumns]="displayedColumns"
+    ></app-mat-table>
+  </div>
+</div>

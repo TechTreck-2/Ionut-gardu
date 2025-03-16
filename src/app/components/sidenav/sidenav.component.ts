@@ -7,6 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { TimerComponent } from '../timer/timer.component';
 import { TimeTrackingComponent } from '../timetable/timetable.component';
+import { VacationPlanningComponent } from '../vacation-planning/vacation-planning.component';
+import { VacationStatusComponent } from '../vacation-status/vacation-status.component';
 @Component({
   selector: 'app-sidenav',
   imports: [
@@ -17,7 +19,9 @@ import { TimeTrackingComponent } from '../timetable/timetable.component';
     MatIconModule,
     MatButtonModule,
     TimerComponent,
-    TimeTrackingComponent
+    TimeTrackingComponent,
+    VacationPlanningComponent,
+    VacationStatusComponent
 ],
   templateUrl: './sidenav.component.html',
   styleUrl: './sidenav.component.css'

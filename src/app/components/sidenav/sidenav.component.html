@@ -20,9 +20,14 @@
         <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'table' , 'sidenav-text': selectedComponent !== 'table'}">Tracking Situation</span>
       </a>
       <a mat-list-item 
-         (click)="selectComponent('vacation')">
-        <mat-icon class="sidenav-text"[ngClass]="{'selected-text': selectedComponent === 'vacation' , 'sidenav-text': selectedComponent !== 'vacation'}">person</mat-icon>
-        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'vacation' , 'sidenav-text': selectedComponent !== 'vacation'}">Vacation Leave</span>
+         (click)="selectComponent('vacation-plan')">
+        <mat-icon class="sidenav-text"[ngClass]="{'selected-text': selectedComponent === 'vacation-plan' , 'sidenav-text': selectedComponent !== 'vacation-plan'}">person</mat-icon>
+        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'vacation-plan' , 'sidenav-text': selectedComponent !== 'vacation-plan'}">Vacation Planification</span>
+      </a>
+      <a mat-list-item 
+         (click)="selectComponent('vacation-status')">
+        <mat-icon class="sidenav-text"[ngClass]="{'selected-text': selectedComponent === 'vacation-status' , 'sidenav-text': selectedComponent !== 'vacation-status'}">person</mat-icon>
+        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'vacation-status' , 'sidenav-text': selectedComponent !== 'vacation-status'}">Vacation Staus</span>
       </a>
     </mat-nav-list>
   </mat-sidenav>
@@ -34,8 +39,11 @@
     <div *ngIf="selectedComponent === 'table'">
       <app-time-table></app-time-table>
     </div>
-    <div *ngIf="selectedComponent === 'vacation'">
-      <h2>Vacation Leave</h2>
+    <div *ngIf="selectedComponent === 'vacation-plan'">
+      <app-vacation-planning></app-vacation-planning>
+    </div>
+    <div *ngIf="selectedComponent === 'vacation-status'">
+      <app-vacation-status></app-vacation-status>
     </div>
   </mat-sidenav-content>
 </mat-sidenav-container>

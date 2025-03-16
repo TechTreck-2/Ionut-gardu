@@ -1,0 +1,67 @@
+.content-container {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    width: auto;
+  }
+
+.date-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    margin: 10px;
+    padding: 1px;
+    width: 100%;
+    border: 1px solid #333;
+    border-radius: 5px;
+  }
+  
+  .table-container {
+    width: 100%;
+    height: 350px;
+    overflow: auto;
+    background-color: #fff;
+  }
+  
+  .mat-mcd-cell {
+    padding: 16px;
+    color: #555;
+  }
+  
+  .mat-mdc-row .mat-mdc-cell {
+    border-bottom: 1px solid transparent;
+    border-top: 1px solid transparent;
+    cursor: pointer;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+    background-color: #fff;
+    color: #333;
+  }
+  
+  
+  .mat-mdc-table {
+    background-color: #f8f8f8;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+  }
+  
+  .mat-mdc-paginator {
+    background-color: #f8f8f8;
+    color: #333;
+    width: 100%;
+    border-top: 1px solid #333;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+  }
+  
+  .mat-mdc-select-value {
+    color: #333;
+  }
+  
