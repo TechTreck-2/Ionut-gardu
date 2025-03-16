@@ -20,23 +20,23 @@
       <mat-datepicker #endPicker></mat-datepicker>
     </mat-form-field>
 
-    <button mat-raised-button color="primary">Search</button>
+    <button mat-raised-button color="primary" (click)="filterEntriesByDate()">Search</button>
   </div>
   <div class="right-panel">
     <div class="table-container">
-      <table mat-table [dataSource]="entries" class="mat-elevation-z8">
+      <table mat-table [dataSource]="filteredData" class="mat-elevation-z8" matSort>
         <ng-container matColumnDef="startDate">
-          <th mat-header-cell *matHeaderCellDef>Start Date</th>
-          <td mat-cell *matCellDef="let entry">{{ entry.startDate | date }}</td>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Start Date</th>
+          <td mat-cell *matCellDef="let entry">{{ entry.startDate | date: 'dd/MM/yyyy' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="endDate">
-          <th mat-header-cell *matHeaderCellDef>End Date</th>
-          <td mat-cell *matCellDef="let entry">{{ entry.endDate | date }}</td>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>End Date</th>
+          <td mat-cell *matCellDef="let entry">{{ entry.endDate | date: 'dd/MM/yyyy' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="duration">
-          <th mat-header-cell *matHeaderCellDef>Duration</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Duration</th>
           <td mat-cell *matCellDef="let entry">{{ entry.duration }} days</td>
         </ng-container>
 
@@ -46,7 +46,7 @@
         </ng-container>
 
         <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
           <td mat-cell *matCellDef="let entry">{{ entry.status }}</td>
         </ng-container>
 

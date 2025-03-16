@@ -35,7 +35,7 @@ export class VacationPlanningComponent {
           endDate,
           duration,
           reason: result.reason,
-          status: 'pending',
+          status: 'Pending',
         };
         this.saveEntry(newEntry);
       }
