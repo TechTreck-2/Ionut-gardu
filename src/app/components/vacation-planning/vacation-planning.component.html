@@ -1,6 +1,7 @@
 <div class="container">
   <h1>Vacation Planning</h1>
-  <button mat-raised-button color="primary" (click)="openModal()">
+  <p>You have {{ vacationDaysLeft }} vacation days left</p>
+  <button mat-raised-button color="primary" (click)="openModal()" [disabled]="vacationDaysLeft === 0">
     + Create Request
   </button>
 

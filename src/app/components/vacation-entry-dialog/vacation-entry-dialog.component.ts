@@ -1,60 +1,107 @@
 import { Component, Inject } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatInputModule } from '@angular/material/input';
-import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { VacationEntry } from '../../models/vacation-entry.model';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import {  MatDialogModule } from '@angular/material/dialog';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import {  MatSortModule } from '@angular/material/sort';
-import { ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-vacation-entry-dialog',
+  standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    MatDialogModule,
-    MatTableModule,
-    MatDatepickerModule,
-    MatInputModule,
-    MatNativeDateModule,
+    ReactiveFormsModule,
     MatButtonModule,
     MatFormFieldModule,
-    MatPaginatorModule,
-    MatSortModule,
-    ReactiveFormsModule,
+    MatInputModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    CommonModule
   ],
   templateUrl: './vacation-entry-dialog.component.html',
-  styleUrl: './vacation-entry-dialog.component.css',
+  styleUrls: ['./vacation-entry-dialog.component.css']
 })
 export class VacationEntryDialogComponent {
-  form: FormGroup;
+  vacationForm: FormGroup;
+  errorMessage: string = '';
+  existingEntries: VacationEntry[] = [];
+  vacationDaysLeft: number;
 
   constructor(
-    private dialogRef: MatDialogRef<VacationEntryDialogComponent>,
     private fb: FormBuilder,
-    @Inject(MAT_DIALOG_DATA) public data: any
+    public dialogRef: MatDialogRef<VacationEntryDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { existingEntries: VacationEntry[], vacationDaysLeft: number }
   ) {
-    this.form = this.fb.group({
-      startDate: [null, Validators.required],
-      endDate: [null, Validators.required],
-      reason: ['', Validators.required],
+    this.existingEntries = data.existingEntries;
+    this.vacationDaysLeft = data.vacationDaysLeft;
+
+    this.vacationForm = this.fb.group({
+      startDate: ['', Validators.required],
+      endDate: ['', Validators.required],
+      reason: ['']
+    });
+
+    // Listen for changes in the form
+    this.vacationForm.valueChanges.subscribe(() => {
+      this.validateDates();
     });
   }
 
-  onCancel(): void {
+  validateDates() {
+    const startDate = new Date(this.vacationForm.get('startDate')?.value);
+    const endDate = new Date(this.vacationForm.get('endDate')?.value);
+
+    if (startDate && endDate) {
+      if (startDate > endDate) {
+        this.errorMessage = 'Start date must be before or the same as the end date.';
+      } else {
+        const duration = this.calculateWeekdays(startDate, endDate);
+        if (duration > this.vacationDaysLeft) {
+          this.errorMessage = `You only have ${this.vacationDaysLeft} vacation days left.`;
+        } else {
+          this.errorMessage = '';
+        }
+      }
+    }
+  }
+
+  calculateWeekdays(startDate: Date, endDate: Date): number {
+    let count = 0;
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      const dayOfWeek = currentDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Exclude Sundays (0) and Saturdays (6)
+        count++;
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return count;
+  }
+
+  closeDialog(): void {
     this.dialogRef.close();
   }
 
-  onSubmit(): void {
-    if (this.form.valid) {
-      this.dialogRef.close(this.form.value);
+  submitForm(): void {
+    if (this.vacationForm.valid && !this.errorMessage) {
+      this.dialogRef.close(this.vacationForm.value);
     }
   }
+
+  dateFilter = (date: Date | null): boolean => {
+    if (!date) {
+      return false;
+    }
+    const time = date.getTime();
+    return !this.existingEntries.some(entry => {
+      const start = new Date(entry.startDate).getTime();
+      const end = new Date(entry.endDate).getTime();
+      return time >= start && time <= end;
+    });
+  };
 }

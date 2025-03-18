@@ -35,17 +35,17 @@ import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
 })
 export class MatTableComponent implements OnInit {
   @Input() entries: VacationEntry[] = [];
-  @Input() displayedColumns: string[] = [];
+  @Input() displayedColumns: string[] = ['startDate', 'endDate', 'duration', 'reason', 'status', 'actions'];
   startDate: Date | null = null;
   endDate: Date | null = null;
 
-  filteredData = new MatTableDataSource<VacationEntry>(this.entries); // Use definite assignment assertion
+  filteredData = new MatTableDataSource<VacationEntry>(this.entries);
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator; // Use definite assignment assertion
-  @ViewChild(MatSort) sort!: MatSort; // Use definite assignment assertion
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
 
   ngOnInit() {
-    this.filteredData = new MatTableDataSource(this.entries); // Initialize with all entries
+    this.filteredData = new MatTableDataSource(this.entries);
     setTimeout(() => {
       this.filteredData.paginator = this.paginator;
       this.filteredData.sort = this.sort;
@@ -57,12 +57,11 @@ export class MatTableComponent implements OnInit {
 
     if (this.startDate && this.endDate) {
       const start = new Date(this.startDate);
-      start.setHours(0, 0, 0, 0); // Set to midnight
+      start.setHours(0, 0, 0, 0);
 
       const end = new Date(this.endDate);
-      end.setHours(23, 59, 59, 999); // Set to the end of the day
+      end.setHours(23, 59, 59, 999);
 
-      // Filter the local copy based on the selected dates
       const filteredEntries = currentData.filter((entry) => {
         const entryStartDate = new Date(entry.startDate).getTime();
         const entryEndDate = new Date(entry.endDate).getTime();
@@ -74,15 +73,14 @@ export class MatTableComponent implements OnInit {
         );
       });
 
-      // Set the filteredData to a new MatTableDataSource with the filtered results
       this.filteredData = new MatTableDataSource(filteredEntries);
 
       this.filteredData.sortingDataAccessor = (item, property) => {
         switch (property) {
           case 'startDate':
-            return new Date(item.startDate).getTime(); // Convert date to timestamp for comparison
+            return new Date(item.startDate).getTime();
           case 'endDate':
-            return new Date(item.endDate).getTime(); // Convert date to timestamp for comparison
+            return new Date(item.endDate).getTime();
           case 'duration':
             return item.duration;
           case 'reason':
@@ -90,21 +88,33 @@ export class MatTableComponent implements OnInit {
           case 'status':
             return item.status;
           default:
-            return ''; // Return empty string for unsupported properties
+            return '';
         }
       };
 
-      this.filteredData.paginator = this.paginator; // Link paginator to filteredData
-      console.log('Data before sort:', this.filteredData.data);
+      this.filteredData.paginator = this.paginator;
       this.filteredData.sort = this.sort;
-      console.log('Data after sort:', this.filteredData.data);
     } else {
-      this.loadFromLocalStorage(); // Reload all entries if no dates are set
+      this.loadFromLocalStorage();
     }
   }
 
   loadFromLocalStorage() {
-    // Implement this method to load data from local storage or another source
-    this.filteredData.data = this.entries; // Example: reset to initial entries
+    this.filteredData.data = this.entries;
+  }
+
+  deleteEntry(entry: VacationEntry) {
+    // Remove the entry from the data source
+    const index = this.entries.findIndex(e => e === entry);
+    if (index > -1) {
+      this.entries.splice(index, 1);
+      this.filteredData.data = [...this.entries];
+    }
+
+    // Remove the entry from local storage
+    localStorage.setItem('vacationEntries', JSON.stringify(this.entries));
+
+    // Optionally, show a snackbar notification
+    // this.snackBar.open('Entry deleted successfully', 'Close', { duration: 3000 });
   }
 }

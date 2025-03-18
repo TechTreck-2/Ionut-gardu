@@ -25,6 +25,14 @@
   <div class="right-panel">
     <div class="table-container">
       <table mat-table [dataSource]="filteredData" class="mat-elevation-z8" matSort>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let entry">
+            <button mat-button color="warn" (click)="deleteEntry(entry)">Delete</button>
+          </td>
+        </ng-container>
+
         <ng-container matColumnDef="startDate">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Start Date</th>
           <td mat-cell *matCellDef="let entry">{{ entry.startDate | date: 'dd/MM/yyyy' }}</td>
