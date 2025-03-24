@@ -1,25 +1,50 @@
-<h1>Enter Vacation Details</h1>
-<form [formGroup]="vacationForm">
-  <mat-form-field appearance="fill">
-    <mat-label>Start Date</mat-label>
-    <input matInput [matDatepicker]="startPicker" formControlName="startDate" [matDatepickerFilter]="dateFilter">
-    <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
-    <mat-datepicker #startPicker></mat-datepicker>
-  </mat-form-field>
+<div class="dialog-container">
+  <h1>Enter Vacation Details</h1>
+  <form [formGroup]="vacationForm">
+    <mat-form-field appearance="fill">
+      <mat-label>Start Date</mat-label>
+      <input
+        matInput
+        [matDatepicker]="startPicker"
+        formControlName="startDate"
+        [matDatepickerFilter]="dateFilter"
+      />
+      <mat-datepicker-toggle
+        matSuffix
+        [for]="startPicker"
+      ></mat-datepicker-toggle>
+      <mat-datepicker #startPicker></mat-datepicker>
+    </mat-form-field>
 
-  <mat-form-field appearance="fill">
-    <mat-label>End Date</mat-label>
-    <input matInput [matDatepicker]="endPicker" formControlName="endDate" [matDatepickerFilter]="dateFilter">
-    <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
-    <mat-datepicker #endPicker></mat-datepicker>
-  </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>End Date</mat-label>
+      <input
+        matInput
+        [matDatepicker]="endPicker"
+        formControlName="endDate"
+        [matDatepickerFilter]="dateFilter"
+      />
+      <mat-datepicker-toggle
+        matSuffix
+        [for]="endPicker"
+      ></mat-datepicker-toggle>
+      <mat-datepicker #endPicker></mat-datepicker>
+    </mat-form-field>
 
-  <mat-form-field appearance="fill">
-    <mat-label>Reason</mat-label>
-    <input matInput formControlName="reason">
-  </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Reason</mat-label>
+      <input matInput formControlName="reason" />
+    </mat-form-field>
 
-  <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
-</form>
-<button mat-button (click)="closeDialog()">Cancel</button>
-<button mat-raised-button color="primary" (click)="submitForm()" [disabled]="!vacationForm.valid">Submit</button>
+    <div *ngIf="errorMessage" class="error-message" style="color: red;">{{ errorMessage }}</div>
+  </form>
+  <button mat-button (click)="closeDialog()">Cancel</button>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="submitForm()"
+    [disabled]="!vacationForm.valid || errorMessage !== ''"
+  >
+    Submit
+  </button>
+</div>

@@ -1,5 +1,10 @@
 import { Component, Inject } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -19,10 +24,10 @@ import { CommonModule } from '@angular/common';
     MatInputModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    CommonModule
+    CommonModule,
   ],
   templateUrl: './vacation-entry-dialog.component.html',
-  styleUrls: ['./vacation-entry-dialog.component.css']
+  styleUrls: ['./vacation-entry-dialog.component.css'],
 })
 export class VacationEntryDialogComponent {
   vacationForm: FormGroup;
@@ -33,7 +38,8 @@ export class VacationEntryDialogComponent {
   constructor(
     private fb: FormBuilder,
     public dialogRef: MatDialogRef<VacationEntryDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { existingEntries: VacationEntry[], vacationDaysLeft: number }
+    @Inject(MAT_DIALOG_DATA)
+    public data: { existingEntries: VacationEntry[]; vacationDaysLeft: number }
   ) {
     this.existingEntries = data.existingEntries;
     this.vacationDaysLeft = data.vacationDaysLeft;
@@ -41,7 +47,7 @@ export class VacationEntryDialogComponent {
     this.vacationForm = this.fb.group({
       startDate: ['', Validators.required],
       endDate: ['', Validators.required],
-      reason: ['']
+      reason: [''],
     });
 
     // Listen for changes in the form
@@ -56,15 +62,18 @@ export class VacationEntryDialogComponent {
 
     if (startDate && endDate) {
       if (startDate > endDate) {
-        this.errorMessage = 'Start date must be before or the same as the end date.';
+        this.errorMessage =
+          'Start date must be before or the same as the end date.';
       } else {
         const duration = this.calculateWeekdays(startDate, endDate);
         if (duration > this.vacationDaysLeft) {
           this.errorMessage = `You only have ${this.vacationDaysLeft} vacation days left.`;
         } else {
-          this.errorMessage = '';
+          this.errorMessage = ''; // Clear error message if no errors
         }
       }
+    } else {
+      this.errorMessage = ''; // Clear error message if dates are not set
     }
   }
 
@@ -74,7 +83,8 @@ export class VacationEntryDialogComponent {
 
     while (currentDate <= endDate) {
       const dayOfWeek = currentDate.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Exclude Sundays (0) and Saturdays (6)
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        // Exclude Sundays (0) and Saturdays (6)
         count++;
       }
       currentDate.setDate(currentDate.getDate() + 1);
@@ -98,7 +108,7 @@ export class VacationEntryDialogComponent {
       return false;
     }
     const time = date.getTime();
-    return !this.existingEntries.some(entry => {
+    return !this.existingEntries.some((entry) => {
       const start = new Date(entry.startDate).getTime();
       const end = new Date(entry.endDate).getTime();
       return time >= start && time <= end;
