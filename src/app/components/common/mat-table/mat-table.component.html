@@ -2,7 +2,7 @@
   <div class="date-container">
     <mat-form-field appearance="fill">
       <mat-label>Start Date</mat-label>
-      <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" />
+      <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" [matDatepickerFilter]="isWeekday"/>
       <mat-datepicker-toggle
         matSuffix
         [for]="startPicker"
@@ -12,7 +12,7 @@
 
     <mat-form-field appearance="fill">
       <mat-label>End Date</mat-label>
-      <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" />
+      <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" [matDatepickerFilter]="isWeekday"/>
       <mat-datepicker-toggle
         matSuffix
         [for]="endPicker"

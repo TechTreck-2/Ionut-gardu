@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, Input } from '@angular/core';
+import { Component, OnInit, ViewChild, Input, SimpleChanges, Output, EventEmitter } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -36,6 +36,7 @@ import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
 export class MatTableComponent implements OnInit {
   @Input() entries: VacationEntry[] = [];
   @Input() displayedColumns: string[] = ['startDate', 'endDate', 'duration', 'reason', 'status', 'actions'];
+  @Output() entryDeleted = new EventEmitter<void>();
   startDate: Date | null = null;
   endDate: Date | null = null;
 
@@ -45,15 +46,33 @@ export class MatTableComponent implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
 
   ngOnInit() {
-    this.filteredData = new MatTableDataSource(this.entries);
+    this.initializeDataSource();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['entries']) {
+      this.updateDataSource();
+    }
+  }
+
+  initializeDataSource() {
+    this.filteredData.data = this.entries;
     setTimeout(() => {
       this.filteredData.paginator = this.paginator;
       this.filteredData.sort = this.sort;
     }, 0);
   }
 
+  updateDataSource() {
+    this.filteredData.data = this.entries;
+    this.filteredData.paginator = this.paginator;
+    this.filteredData.sort = this.sort;
+  }
+
+
   filterEntriesByDate() {
     const currentData = [...this.entries];
+    
 
     if (this.startDate && this.endDate) {
       const start = new Date(this.startDate);
@@ -104,17 +123,20 @@ export class MatTableComponent implements OnInit {
   }
 
   deleteEntry(entry: VacationEntry) {
-    // Remove the entry from the data source
     const index = this.entries.findIndex(e => e === entry);
     if (index > -1) {
       this.entries.splice(index, 1);
       this.filteredData.data = [...this.entries];
+      this.entryDeleted.emit();
     }
 
-    // Remove the entry from local storage
     localStorage.setItem('vacationEntries', JSON.stringify(this.entries));
 
-    // Optionally, show a snackbar notification
-    // this.snackBar.open('Entry deleted successfully', 'Close', { duration: 3000 });
+   
   }
+
+  isWeekday = (date: Date | null): boolean => {
+    const day = (date || new Date()).getDay();
+    return day !== 0 && day !== 6;
+  };
 }

@@ -59,11 +59,14 @@ export class VacationEntryDialogComponent {
   validateDates() {
     const startDate = new Date(this.vacationForm.get('startDate')?.value);
     const endDate = new Date(this.vacationForm.get('endDate')?.value);
-
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set time to midnight to compare only the date part
+  
     if (startDate && endDate) {
-      if (startDate > endDate) {
-        this.errorMessage =
-          'Start date must be before or the same as the end date.';
+      if (startDate <= today) {
+        this.errorMessage = 'Start date must be after today.';
+      } else if (startDate > endDate) {
+        this.errorMessage = 'Start date must be before or the same as the end date.';
       } else {
         const duration = this.calculateWeekdays(startDate, endDate);
         if (duration > this.vacationDaysLeft) {
@@ -107,7 +110,15 @@ export class VacationEntryDialogComponent {
     if (!date) {
       return false;
     }
+  
+    const day = date.getDay();
+    // Check if the date is a weekend (0 = Sunday, 6 = Saturday)
+    if (day === 0 || day === 6) {
+      return false;
+    }
+  
     const time = date.getTime();
+    // Check if the date is within any existing entry range
     return !this.existingEntries.some((entry) => {
       const start = new Date(entry.startDate).getTime();
       const end = new Date(entry.endDate).getTime();

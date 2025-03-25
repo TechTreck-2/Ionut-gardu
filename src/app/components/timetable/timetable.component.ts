@@ -314,4 +314,9 @@ export class TimeTrackingComponent implements OnInit {
   private pad(num: number): string {
     return num < 10 ? '0' + num : num.toString();
   }
+
+  isWeekday = (date: Date | null): boolean => {
+    const day = (date || new Date()).getDay();
+    return day !== 0 && day !== 6;
+  };
 }

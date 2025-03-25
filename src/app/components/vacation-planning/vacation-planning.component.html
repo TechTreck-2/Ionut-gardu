@@ -1,7 +1,16 @@
 <div class="container">
   <h1>Vacation Planning</h1>
-  <p>You have {{ vacationDaysLeft }} vacation days left</p>
-  <button mat-raised-button color="primary" (click)="openModal()" [disabled]="vacationDaysLeft === 0">
+  <div class="info-container">
+    <p style="font-weight: bold;">Leave days for current fiscal year</p>
+    <p>Annual Leave days due: 21</p>
+    <p>Remaining annual leave days: {{ vacationDaysLeft }}</p>
+  </div>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="openModal()"
+    [disabled]="vacationDaysLeft === 0"
+  >
     + Create Request
   </button>
 
@@ -9,6 +18,7 @@
     <app-mat-table
       [entries]="entries"
       [displayedColumns]="displayedColumns"
+      (entryDeleted)="updateVacationDaysLeft()"
     ></app-mat-table>
   </div>
 </div>

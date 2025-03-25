@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { VacationService } from '../../services/vacation.service';
@@ -6,13 +6,14 @@ import { VacationEntry } from '../../models/vacation-entry.model';
 import { MatTableComponent } from '../common/mat-table/mat-table.component';
 import { MatButtonModule } from '@angular/material/button';
 import { VacationEntryDialogComponent } from '../vacation-entry-dialog/vacation-entry-dialog.component';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-vacation-planning',
   templateUrl: './vacation-planning.component.html',
   styleUrls: ['./vacation-planning.component.css'],
   standalone: true,
-  imports: [MatTableComponent, MatButtonModule],
+  imports: [MatTableComponent, MatButtonModule, CommonModule],
 })
 export class VacationPlanningComponent {
   entries: VacationEntry[] = [];
@@ -26,6 +27,10 @@ export class VacationPlanningComponent {
   ) {
     this.entries = this.vacationService.getVacationEntries();
     this.updateVacationDaysLeft();
+  }
+
+  ngOnInit(): void {
+    this.entries = this.vacationService.getVacationEntries();
   }
 
   openModal() {
@@ -49,6 +54,7 @@ export class VacationPlanningComponent {
             status: 'Pending',
           };
           this.saveEntry(newEntry);
+          console.log('Entry saved:', this.entries);
         }
       }
     });
