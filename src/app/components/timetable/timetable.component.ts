@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -110,7 +110,7 @@ export class TimeTrackingComponent implements OnInit {
         this.dataSource.data.push(entry);
       }
 
-      this.saveToLocalStorage();
+      //this.saveToLocalStorage();
     });
   }
 
@@ -123,8 +123,16 @@ export class TimeTrackingComponent implements OnInit {
     }, 0);
   }
 
+  ngOnDestroy(): void {
+    // Reset filters when the component is destroyed
+    this.startDate = null;
+    this.endDate = null;
+    this.filteredData = new MatTableDataSource(this.dataSource.data);
+  }
+
   filterEntriesByDate() {
     const currentData = [...this.dataSource.data];
+
 
     if (this.startDate && this.endDate) {
       const start = new Date(this.startDate);
@@ -158,9 +166,7 @@ export class TimeTrackingComponent implements OnInit {
       };
 
       this.filteredData.paginator = this.paginator; // Link paginator to filteredData
-      console.log('Data before sort:', this.filteredData.data);
       this.filteredData.sort = this.sort;
-      console.log('Data after sort:', this.filteredData.data);
     } else {
       this.loadFromLocalStorage(); // Reload all entries if no dates are set
     }
@@ -213,6 +219,7 @@ export class TimeTrackingComponent implements OnInit {
         }
 
         this.saveToLocalStorage(); // Save changes to local storage
+
         this.snackBar.open('Entry updated successfully!', 'Close', {
           duration: 2000,
         });
@@ -235,16 +242,14 @@ export class TimeTrackingComponent implements OnInit {
   }
 
   private saveToLocalStorage() {
-    // Extract only the data array from the dataSource
     const dataToSave = this.dataSource.data.map((entry) => ({
       date: entry.date,
       hoursWorked: entry.hoursWorked,
       clockInTime: entry.clockInTime,
       clockOutTime: entry.clockOutTime,
     }));
-
-    // Save the extracted data to local storage
     localStorage.setItem('timeEntries', JSON.stringify(dataToSave));
+    this.timerService.loadState();
   }
 
   private loadFromLocalStorage() {
@@ -252,7 +257,6 @@ export class TimeTrackingComponent implements OnInit {
     if (savedData) {
       const parsedData: TimeEntry[] = JSON.parse(savedData);
       this.dataSource.data = parsedData;
-      console.log('Loaded data:', this.dataSource.data); // Debugging log
     } else {
       this.dataSource.data = [];
       console.log('No data found in local storage.'); // Debugging log

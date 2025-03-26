@@ -96,7 +96,7 @@ export class TimerComponent implements OnInit {
     const hours = Math.floor(remainingTime / 3600);
     const minutes = Math.floor((remainingTime % 3600) / 60);
     const seconds = remainingTime % 60;
-    if (remainingTime <= 0 || !this.isWeekend) {
+    if (remainingTime <= 0 || this.isWeekend) {
       return '00:00:00';
     }
     return `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
