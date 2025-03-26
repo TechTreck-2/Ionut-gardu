@@ -50,7 +50,7 @@ export class VacationEntryDialogComponent {
       reason: [''],
     });
 
-    // Listen for changes in the form
+    
     this.vacationForm.valueChanges.subscribe(() => {
       this.validateDates();
     });
@@ -60,7 +60,7 @@ export class VacationEntryDialogComponent {
     const startDate = new Date(this.vacationForm.get('startDate')?.value);
     const endDate = new Date(this.vacationForm.get('endDate')?.value);
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set time to midnight to compare only the date part
+    today.setHours(0, 0, 0, 0); 
   
     if (startDate && endDate) {
       if (startDate <= today) {
@@ -72,11 +72,11 @@ export class VacationEntryDialogComponent {
         if (duration > this.vacationDaysLeft) {
           this.errorMessage = `You only have ${this.vacationDaysLeft} vacation days left.`;
         } else {
-          this.errorMessage = ''; // Clear error message if no errors
+          this.errorMessage = ''; 
         }
       }
     } else {
-      this.errorMessage = ''; // Clear error message if dates are not set
+      this.errorMessage = ''; 
     }
   }
 
@@ -87,7 +87,6 @@ export class VacationEntryDialogComponent {
     while (currentDate <= endDate) {
       const dayOfWeek = currentDate.getDay();
       if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        // Exclude Sundays (0) and Saturdays (6)
         count++;
       }
       currentDate.setDate(currentDate.getDate() + 1);
@@ -112,13 +111,11 @@ export class VacationEntryDialogComponent {
     }
   
     const day = date.getDay();
-    // Check if the date is a weekend (0 = Sunday, 6 = Saturday)
     if (day === 0 || day === 6) {
       return false;
     }
   
     const time = date.getTime();
-    // Check if the date is within any existing entry range
     return !this.existingEntries.some((entry) => {
       const start = new Date(entry.startDate).getTime();
       const end = new Date(entry.endDate).getTime();
