@@ -108,9 +108,10 @@ export class TimeTrackingComponent implements OnInit {
         this.dataSource.data[existingEntryIndex] = entry;
       } else {
         this.dataSource.data.push(entry);
+        this.saveToLocalStorage();
       }
 
-      this.saveToLocalStorage();
+      
     });
   }
 
@@ -250,6 +251,7 @@ export class TimeTrackingComponent implements OnInit {
       clockOutTime: entry.clockOutTime,
     }));
     localStorage.setItem('timeEntries', JSON.stringify(dataToSave));
+    console.log('Data saved to local storage.', dataToSave); // Debugging log
   }
 
   private loadFromLocalStorage() {
@@ -257,6 +259,7 @@ export class TimeTrackingComponent implements OnInit {
     if (savedData) {
       const parsedData: TimeEntry[] = JSON.parse(savedData);
       this.dataSource.data = parsedData;
+      console.log('Data loaded from local storage.', parsedData); // Debugging log
     } else {
       this.dataSource.data = [];
       console.log('No data found in local storage.'); // Debugging log

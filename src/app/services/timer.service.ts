@@ -171,6 +171,7 @@ export class TimerService {
       }
 
       localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+      console.log('State saved successfully.', timeEntries);
     }
   }
 
@@ -206,10 +207,12 @@ export class TimerService {
         } else {
           this.resetTimer();
         }
+        console.log('State loaded successfully.', timeEntries);
       } else {
         this.resetTimer();
       }
     }
+    
   }
 
   logLocalStorageContent() {
