@@ -119,11 +119,11 @@ export class TimerService {
       if (savedData) {
         let timeEntries = JSON.parse(savedData);
 
-        console.log('Before deletion:', timeEntries);
+        //console.log('Before deletion:', timeEntries); //Debugging log
 
         timeEntries = timeEntries.filter((entry: any) => entry.date !== date);
 
-        console.log('After deletion:', timeEntries);
+        //console.log('After deletion:', timeEntries); //Debugging log
 
         localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
       } else {
@@ -171,7 +171,7 @@ export class TimerService {
       }
 
       localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
-      console.log('State saved successfully.', timeEntries);
+      //console.log('State saved successfully.', timeEntries); //Debugging log
     }
   }
 
@@ -207,7 +207,7 @@ export class TimerService {
         } else {
           this.resetTimer();
         }
-        console.log('State loaded successfully.', timeEntries);
+        //console.log('State loaded successfully.', timeEntries); //Debugging log
       } else {
         this.resetTimer();
       }
