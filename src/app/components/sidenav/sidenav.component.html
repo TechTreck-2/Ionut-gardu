@@ -25,9 +25,9 @@
         <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'vacation-plan' , 'sidenav-text': selectedComponent !== 'vacation-plan'}">Vacation Planification</span>
       </a>
       <a mat-list-item 
-         (click)="selectComponent('vacation-status')">
-        <mat-icon class="sidenav-text"[ngClass]="{'selected-text': selectedComponent === 'vacation-status' , 'sidenav-text': selectedComponent !== 'vacation-status'}">person</mat-icon>
-        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'vacation-status' , 'sidenav-text': selectedComponent !== 'vacation-status'}">Vacation Staus</span>
+         (click)="selectComponent('permission-leave')">
+        <mat-icon class="sidenav-text"[ngClass]="{'selected-text': selectedComponent === 'permission-leave' , 'sidenav-text': selectedComponent !== 'permission-leave'}">person</mat-icon>
+        <span *ngIf="isExpanded" [ngClass]="{'selected-text': selectedComponent === 'permission-leave' , 'sidenav-text': selectedComponent !== 'permission-leave'}">Permission leave</span>
       </a>
     </mat-nav-list>
   </mat-sidenav>
@@ -42,8 +42,8 @@
     <div *ngIf="selectedComponent === 'vacation-plan'">
       <app-vacation-planning></app-vacation-planning>
     </div>
-    <div *ngIf="selectedComponent === 'vacation-status'">
-      <app-vacation-status></app-vacation-status>
+    <div *ngIf="selectedComponent === 'permission-leave'">
+      <app-permission-leave></app-permission-leave>
     </div>
   </mat-sidenav-content>
 </mat-sidenav-container>

@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { VacationStatusComponent } from './vacation-status.component';
+import { PermissionLeaveComponent } from './permission-leave.component';
 
-describe('VacationStatusComponent', () => {
-  let component: VacationStatusComponent;
-  let fixture: ComponentFixture<VacationStatusComponent>;
+describe('PermissionLeaveComponent', () => {
+  let component: PermissionLeaveComponent;
+  let fixture: ComponentFixture<PermissionLeaveComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [VacationStatusComponent]
+      imports: [PermissionLeaveComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(VacationStatusComponent);
+    fixture = TestBed.createComponent(PermissionLeaveComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
