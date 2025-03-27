@@ -110,7 +110,7 @@ export class TimeTrackingComponent implements OnInit {
         this.dataSource.data.push(entry);
       }
 
-      //this.saveToLocalStorage();
+      this.saveToLocalStorage();
     });
   }
 
@@ -219,6 +219,7 @@ export class TimeTrackingComponent implements OnInit {
         }
 
         this.saveToLocalStorage(); // Save changes to local storage
+        this.timerService.loadState();
 
         this.snackBar.open('Entry updated successfully!', 'Close', {
           duration: 2000,
@@ -249,7 +250,6 @@ export class TimeTrackingComponent implements OnInit {
       clockOutTime: entry.clockOutTime,
     }));
     localStorage.setItem('timeEntries', JSON.stringify(dataToSave));
-    this.timerService.loadState();
   }
 
   private loadFromLocalStorage() {
