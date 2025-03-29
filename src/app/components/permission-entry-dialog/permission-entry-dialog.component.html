@@ -4,7 +4,7 @@
     <form [formGroup]="form">
       <mat-form-field>
         <mat-label>Date</mat-label>
-        <input matInput [matDatepicker]="picker" formControlName="date" />
+        <input matInput [matDatepicker]="picker" formControlName="date" [matDatepickerFilter]="dateFilter" />
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
