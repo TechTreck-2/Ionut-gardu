@@ -30,6 +30,7 @@ export class TimerComponent implements OnInit {
       this.time = time;
       this.updateDataSource();
     });
+    this.checkisWeekend();
     this.timerService.loadState();
   }
 

@@ -1,1 +1,15 @@
-<p>permission-leave works!</p>
+<div class="container">
+    <h1>Permission Leave</h1>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="openModal()"
+    >
+      + Create Request
+    </button>
+  
+    <div class="shadow-container">
+      <app-mat-table
+      ></app-mat-table>
+    </div>
+  </div>
