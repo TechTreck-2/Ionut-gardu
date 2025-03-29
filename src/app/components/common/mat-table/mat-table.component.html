@@ -2,7 +2,12 @@
   <div class="date-container">
     <mat-form-field appearance="fill">
       <mat-label>Start Date</mat-label>
-      <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" [matDatepickerFilter]="isWeekday"/>
+      <input
+        matInput
+        [matDatepicker]="startPicker"
+        [(ngModel)]="startDate"
+        [matDatepickerFilter]="isWeekday"
+      />
       <mat-datepicker-toggle
         matSuffix
         [for]="startPicker"
@@ -12,7 +17,12 @@
 
     <mat-form-field appearance="fill">
       <mat-label>End Date</mat-label>
-      <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" [matDatepickerFilter]="isWeekday"/>
+      <input
+        matInput
+        [matDatepicker]="endPicker"
+        [(ngModel)]="endDate"
+        [matDatepickerFilter]="isWeekday"
+      />
       <mat-datepicker-toggle
         matSuffix
         [for]="endPicker"
@@ -20,32 +30,72 @@
       <mat-datepicker #endPicker></mat-datepicker>
     </mat-form-field>
 
-    <button mat-raised-button color="primary" (click)="filterEntriesByDate()">Search</button>
+    <button mat-raised-button color="primary" (click)="filterEntriesByDate()">
+      Search
+    </button>
   </div>
   <div class="right-panel">
     <div class="table-container">
-      <table mat-table [dataSource]="filteredData" class="mat-elevation-z8" matSort>
-
+      <table
+        mat-table
+        [dataSource]="filteredData"
+        class="mat-elevation-z8"
+        matSort
+      >
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Actions</th>
           <td mat-cell *matCellDef="let entry">
-            <button mat-button color="warn" (click)="deleteEntry(entry)">Delete</button>
+            <button mat-button color="warn" (click)="deleteEntry(entry)">
+              Delete
+            </button>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
+          <td mat-cell *matCellDef="let entry">
+            {{ entry.date | date : "dd/MM/yyyy" }}
           </td>
         </ng-container>
 
         <ng-container matColumnDef="startDate">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Start Date</th>
-          <td mat-cell *matCellDef="let entry">{{ entry.startDate | date: 'dd/MM/yyyy' }}</td>
+          <td mat-cell *matCellDef="let entry">
+            {{ entry.startDate | date : "dd/MM/yyyy" }}
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="endDate">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>End Date</th>
-          <td mat-cell *matCellDef="let entry">{{ entry.endDate | date: 'dd/MM/yyyy' }}</td>
+          <td mat-cell *matCellDef="let entry">
+            {{ entry.endDate | date : "dd/MM/yyyy" }}
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="duration">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Duration</th>
           <td mat-cell *matCellDef="let entry">{{ entry.duration }} days</td>
+        </ng-container>
+
+        <ng-container matColumnDef="leave-duration">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Duration</th>
+          <td mat-cell *matCellDef="let element">
+            {{ calculateDuration(element) }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="startTime">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Start Time</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.startTime  }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="endTime">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>End Time</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.endTime  }}
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="reason">
@@ -58,11 +108,13 @@
           <td mat-cell *matCellDef="let entry">{{ entry.status }}</td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
       </table>
     </div>
-    <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
-
+    <mat-paginator
+      [pageSizeOptions]="[5, 10, 20]"
+      showFirstLastButtons
+    ></mat-paginator>
   </div>
 </div>

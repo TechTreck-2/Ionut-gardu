@@ -18,6 +18,7 @@
     <app-mat-table
       [entries]="entries"
       [displayedColumns]="displayedColumns"
+      [localStorageKey]="'vacationEntries'"
       (entryDeleted)="updateVacationDaysLeft()"
     ></app-mat-table>
   </div>
