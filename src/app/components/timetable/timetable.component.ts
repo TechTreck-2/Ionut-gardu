@@ -126,13 +126,13 @@ export class TimeTrackingComponent implements OnInit {
     setTimeout(() => {
       this.filteredData.paginator = this.paginator;
       this.filteredData.sort = this.sort;
-      this.sort.active = 'date'; // Set the default active sort column
+      this.sort.active = 'date'; 
       this.sort.direction = 'asc';
     }, 0);
   }
 
   ngOnDestroy(): void {
-    // Reset filters when the component is destroyed
+    
     this.startDate = null;
     this.endDate = null;
     this.filteredData = new MatTableDataSource(this.dataSource.data);
@@ -144,11 +144,11 @@ export class TimeTrackingComponent implements OnInit {
   }
 
   calculatePermissionLeaveDuration(entry: TimeEntry): string {
-    // Ensure the date format is consistent
+   
     const formattedDate = this.formatDate(new Date(entry.date));
   
     const permissionEntry = this.permissionEntries.find(
-      (pe) => pe.date === formattedDate && pe.status === 'Approved' // Check for approved status
+      (pe) => pe.date === formattedDate && pe.status === 'Approved' 
     );
     
     return permissionEntry
@@ -157,7 +157,7 @@ export class TimeTrackingComponent implements OnInit {
   }
   
   private formatDate(date: Date): string {
-    // Format the date to match the stored format (e.g., YYYY-MM-DD)
+    
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
@@ -169,56 +169,52 @@ export class TimeTrackingComponent implements OnInit {
 
     if (this.startDate && this.endDate) {
       const start = new Date(this.startDate);
-      start.setHours(0, 0, 0, 0); // Set to midnight
+      start.setHours(0, 0, 0, 0); 
 
       const end = new Date(this.endDate);
-      end.setHours(23, 59, 59, 999); // Set to the end of the day
+      end.setHours(23, 59, 59, 999); 
 
-      // Filter the local copy based on the selected dates
+      
       const filteredEntries = currentData.filter((entry) => {
         const entryDate = new Date(entry.date).getTime();
         return entryDate >= start.getTime() && entryDate <= end.getTime();
       });
 
-      // Set the filteredData to a new MatTableDataSource with the filtered results
+      
       this.filteredData = new MatTableDataSource(filteredEntries);
 
       this.filteredData.sortingDataAccessor = (item, property) => {
         switch (property) {
           case 'date':
-            return new Date(item.date).getTime(); // Convert date to timestamp for comparison
+            return new Date(item.date).getTime();
           case 'hoursWorked':
             return item.hoursWorked;
           case 'clockInTime':
-            return item.clockInTime ? item.clockInTime : ''; // Return empty string if undefined
+            return item.clockInTime ? item.clockInTime : '';
           case 'clockOutTime':
-            return item.clockOutTime ? item.clockOutTime : ''; // Return empty string if undefined
+            return item.clockOutTime ? item.clockOutTime : '';
+          case 'permissionLeaveDuration':
+            return this.getPermissionLeaveDurationInSeconds(item);
           default:
-            return ''; // Return empty string for unsupported properties
+            return '';
         }
       };
 
-      this.filteredData.paginator = this.paginator; // Link paginator to filteredData
+      this.filteredData.paginator = this.paginator; 
       this.filteredData.sort = this.sort;
     } else {
-      this.loadFromLocalStorage(); // Reload all entries if no dates are set
+      this.loadFromLocalStorage(); 
     }
   }
 
-  announceSortChange(sortState: Sort) {
-    if (sortState.direction) {
-      this.snackBar.open(
-        `Sorted ${sortState.active} ${sortState.direction}`,
-        'Close',
-        {
-          duration: 2000,
-        }
-      );
-    } else {
-      this.snackBar.open('Sorting cleared', 'Close', {
-        duration: 2000,
-      });
+  private getPermissionLeaveDurationInSeconds(item: TimeEntry): number {
+    const durationString = this.calculatePermissionLeaveDuration(item);
+    if (durationString === '---') {
+      return 0; // Return 0 if no permission leave or not approved
     }
+  
+    const [hours, minutes, seconds] = durationString.split(':').map(Number);
+    return hours * 3600 + minutes * 60 + seconds;
   }
 
   editEntry(entry: TimeEntry) {
@@ -324,7 +320,7 @@ export class TimeTrackingComponent implements OnInit {
     //console.log('Checking for permission entry on formatted date:', formattedDate);
 
   
-    // Find the permission entry for the given date
+    
     const permissionEntry = this.permissionEntries.find(
       (pe) => pe.date === formattedDate && pe.status === 'Approved'
     );
@@ -348,12 +344,12 @@ export class TimeTrackingComponent implements OnInit {
     const day = entry.date;
     const entryDate = new Date(day);
   
-    // Check if the date is a weekend
+    
     if (this.timerService.isWeekend(entryDate)) {
       return 'Weekend';
     }
   
-    // Check if the date is a vacation day
+    
     if (this.timerService.isVacationDay(entryDate)) {
       return 'Vacation Day';
     } else if (seconds < 0) {
