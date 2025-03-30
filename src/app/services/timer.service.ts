@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, interval, Subscription } from 'rxjs';
+import { VacationService } from './vacation.service';
+import { VacationEntry } from '../models/vacation-entry.model';
 
 @Injectable({
   providedIn: 'root',
@@ -11,8 +13,9 @@ export class TimerService {
   private isRunning = false;
   private firstClockIn: Date | null = null;
   private clockOutTime: Date | null = null;
+  vacationEntries: VacationEntry[] = [];
 
-  constructor() {
+  constructor(private vacationService: VacationService) {
     this.loadState();
   }
 
@@ -23,13 +26,16 @@ export class TimerService {
   startTimer() {
     if (!this.isRunning) {
       const newClockInDate = new Date();
-  
+
       if (this.firstClockIn && this.clockOutTime) {
-        if (newClockInDate > this.firstClockIn && newClockInDate < this.clockOutTime) {
-          return "The new clock-in date is between the existing clock-in and clock-out times.";
+        if (
+          newClockInDate > this.firstClockIn &&
+          newClockInDate < this.clockOutTime
+        ) {
+          return 'The new clock-in date is between the existing clock-in and clock-out times.';
         }
       }
-  
+
       this.isRunning = true;
       if (!this.firstClockIn) {
         this.firstClockIn = newClockInDate;
@@ -39,11 +45,11 @@ export class TimerService {
         this.timeSubject.next(this.timeSubject.value + 1);
         this.saveState();
       });
-  
-      return "Tracking started.";
+
+      return 'Tracking started.';
     }
-  
-    return "Tracking is already running.";
+
+    return 'Tracking is already running.';
   }
 
   stopTimer() {
@@ -134,7 +140,7 @@ export class TimerService {
     }
   }
 
-   saveState() {
+  saveState() {
     if (this.isLocalStorageAvailable()) {
       const today = new Date().toDateString();
       const savedData = localStorage.getItem('timeEntries');
@@ -212,7 +218,6 @@ export class TimerService {
         this.resetTimer();
       }
     }
-    
   }
 
   logLocalStorageContent() {
@@ -248,7 +253,23 @@ export class TimerService {
   }
 
   isWeekend(date: Date): boolean {
-    const dayOfWeek = date.getDay(); // Get the day of the week (0 for Sunday, 6 for Saturday)
-    return dayOfWeek === 0 || dayOfWeek === 6; // Return true if it's Saturday or Sunday
+    const dayOfWeek = date.getDay(); 
+    return dayOfWeek === 0 || dayOfWeek === 6; 
+  }
+
+  isVacationDay(date: Date): boolean {
+    if (this.isLocalStorageAvailable()) {
+      this.vacationEntries = this.vacationService.getVacationEntries();
+      return this.vacationEntries.some((vacation) => {
+        const vacationStart = new Date(vacation.startDate);
+        const vacationEnd = new Date(vacation.endDate);
+        return (
+          vacation.status === 'Approved' &&
+          date >= vacationStart &&
+          date <= vacationEnd
+        );
+      });
+    }
+    return false; 
   }
 }

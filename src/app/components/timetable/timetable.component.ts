@@ -15,7 +15,8 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
-
+import { PermissionLeaveService } from '../../services/permission-leave.service';
+import { PermissionEntry } from '../../models/permission-entry.model';
 interface TimeEntry {
   date: string;
   hoursWorked: number;
@@ -48,11 +49,15 @@ export class TimeTrackingComponent implements OnInit {
     'date',
     'clockInTime',
     'clockOutTime',
+    'permissionLeaveDuration',
     'hoursWorked',
     'status',
+    
   ];
   dataSource = new MatTableDataSource<TimeEntry>();
   filteredData = new MatTableDataSource<TimeEntry>();
+  permissionEntries: PermissionEntry[] = [];
+
   selectedDate: Date | null = null;
   newHours: number | null = null;
   startDate: Date | null = null;
@@ -62,12 +67,16 @@ export class TimeTrackingComponent implements OnInit {
 
   constructor(
     private timerService: TimerService,
+    private permissionLeaveService: PermissionLeaveService,
     private snackBar: MatSnackBar,
     public dialog: MatDialog
-  ) {}
+  ) {
+    
+  }
 
   ngOnInit(): void {
     this.loadFromLocalStorage();
+    this.loadPermissionEntries();
     const date = new Date();
     this.startDate = new Date(date);
     this.endDate = new Date(date);
@@ -110,8 +119,6 @@ export class TimeTrackingComponent implements OnInit {
         this.dataSource.data.push(entry);
         this.saveToLocalStorage();
       }
-
-      
     });
   }
 
@@ -131,9 +138,34 @@ export class TimeTrackingComponent implements OnInit {
     this.filteredData = new MatTableDataSource(this.dataSource.data);
   }
 
+  loadPermissionEntries(): void {
+    this.permissionEntries = this.permissionLeaveService.getPermissionEntries();
+    //console.log('Permission entries loaded.', this.permissionEntries); // Debugging log
+  }
+
+  calculatePermissionLeaveDuration(entry: TimeEntry): string {
+    // Ensure the date format is consistent
+    const formattedDate = this.formatDate(new Date(entry.date));
+  
+    const permissionEntry = this.permissionEntries.find(
+      (pe) => pe.date === formattedDate && pe.status === 'Approved' // Check for approved status
+    );
+    
+    return permissionEntry
+      ? this.permissionLeaveService.calculateDuration(permissionEntry)
+      : '---';
+  }
+  
+  private formatDate(date: Date): string {
+    // Format the date to match the stored format (e.g., YYYY-MM-DD)
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   filterEntriesByDate() {
     const currentData = [...this.dataSource.data];
-
 
     if (this.startDate && this.endDate) {
       const start = new Date(this.startDate);
@@ -203,23 +235,23 @@ export class TimeTrackingComponent implements OnInit {
         this.validateTimeFormat(result.clockInTime) &&
         this.validateTimeFormat(result.clockOutTime)
       ) {
-        // Update the entry in filteredData
+
         entry.clockInTime = result.clockInTime;
         entry.clockOutTime = result.clockOutTime;
         entry.hoursWorked = this.calculateHoursWorked(
           result.clockInTime,
-          result.clockOutTime
+          result.clockOutTime,
+          entry.date
         );
 
-        // Update the corresponding entry in dataSource
         const originalEntryIndex = this.dataSource.data.findIndex(
           (e) => e.date === entry.date
         );
         if (originalEntryIndex > -1) {
-          this.dataSource.data[originalEntryIndex] = entry; // Update original data
+          this.dataSource.data[originalEntryIndex] = entry;
         }
 
-        this.saveToLocalStorage(); // Save changes to local storage
+        this.saveToLocalStorage();
         this.timerService.loadState();
 
         this.snackBar.open('Entry updated successfully!', 'Close', {
@@ -266,35 +298,64 @@ export class TimeTrackingComponent implements OnInit {
     }
   }
 
-  calculateHoursWorked(clockIn: string, clockOut: string): number {
+  calculateHoursWorked(clockIn: string, clockOut: string, date: string): number {
     const clockInParts = clockIn.split(':').map(Number);
     const clockOutParts = clockOut.split(':').map(Number);
-
+  
     if (clockInParts.length !== 3 || clockOutParts.length !== 3) {
       console.error('Invalid time format. Expected HH:mm:ss');
-      return NaN;
+      return 0;
     }
-
+  
     const [inHours, inMinutes, inSeconds] = clockInParts;
     const [outHours, outMinutes, outSeconds] = clockOutParts;
-
+  
     const inDate = new Date();
     const outDate = new Date();
-
+  
     inDate.setHours(inHours, inMinutes, inSeconds, 0);
     outDate.setHours(outHours, outMinutes, outSeconds, 0);
-
+  
     const diffInMilliseconds = outDate.getTime() - inDate.getTime();
-    const diffInHours = diffInMilliseconds / 1000 / 3600; // Convert milliseconds to hours
-    this.saveToLocalStorage();
-    return diffInHours;
+    let diffInHours = diffInMilliseconds / 1000 / 3600; 
+  
+    
+    const formattedDate = this.formatDate(new Date(date));
+    //console.log('Checking for permission entry on formatted date:', formattedDate);
+
+  
+    // Find the permission entry for the given date
+    const permissionEntry = this.permissionEntries.find(
+      (pe) => pe.date === formattedDate && pe.status === 'Approved'
+    );
+    //console.log('Permission entry:', permissionEntry); // Debugging log
+  
+    if (permissionEntry) {
+      const permissionDuration = this.permissionLeaveService.calculateDuration(permissionEntry);
+      const [permHours, permMinutes, permSeconds] = permissionDuration.split(':').map(Number);
+      const permDurationInHours = permHours + permMinutes / 60 + permSeconds / 3600;
+      //console.log('Permission duration in hours:', permDurationInHours); // Debugging log
+      
+      diffInHours -= permDurationInHours;
+    }
+  
+    
+    return Math.max(0, diffInHours);
   }
 
   computeStatus(entry: TimeEntry): string {
     const seconds = entry.hoursWorked;
     const day = entry.date;
-    if (this.timerService.isWeekend(new Date(day))) {
+    const entryDate = new Date(day);
+  
+    // Check if the date is a weekend
+    if (this.timerService.isWeekend(entryDate)) {
       return 'Weekend';
+    }
+  
+    // Check if the date is a vacation day
+    if (this.timerService.isVacationDay(entryDate)) {
+      return 'Vacation Day';
     } else if (seconds < 0) {
       return 'Error';
     } else if (seconds === 0) {
@@ -304,6 +365,11 @@ export class TimeTrackingComponent implements OnInit {
     } else {
       return 'Tracked';
     }
+  }
+
+  isDisabled(entry: TimeEntry): boolean {
+    const status = this.computeStatus(entry);
+    return status === 'Weekend' || status === 'Vacation Day';
   }
 
   validateTimeFormat(time: string): boolean {

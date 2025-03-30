@@ -17,4 +17,12 @@ export class VacationService {
     entries.push(entry);
     localStorage.setItem(this.storageKey, JSON.stringify(entries));
   }
+
+  approveEntry(entries: VacationEntry[], entryToApprove: VacationEntry): VacationEntry[] {
+    const index = entries.findIndex(e => e === entryToApprove);
+    if (index > -1) {
+      entries[index].status = 'Approved';
+    }
+    return entries;
+  }
 }

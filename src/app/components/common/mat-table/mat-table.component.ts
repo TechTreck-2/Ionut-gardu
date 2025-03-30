@@ -1,4 +1,12 @@
-import { Component, OnInit, ViewChild, Input, SimpleChanges, Output, EventEmitter } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  Input,
+  SimpleChanges,
+  Output,
+  EventEmitter,
+} from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
@@ -13,7 +21,9 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
 import { PermissionLeaveService } from '../../../services/permission-leave.service';
-
+import { VacationService } from '../../../services/vacation.service';
+import { VacationEntry } from '../../../models/vacation-entry.model'; // Ensure correct import
+import { PermissionEntry } from '../../../models/permission-entry.model'; // Ensure correct import
 @Component({
   selector: 'app-mat-table',
   templateUrl: './mat-table.component.html',
@@ -32,8 +42,11 @@ import { PermissionLeaveService } from '../../../services/permission-leave.servi
     MatDialogModule,
   ],
 })
-export class MatTableComponent<T> implements OnInit {
-  constructor(private permissionLeaveService: PermissionLeaveService) {}
+export class MatTableComponent<T extends { status: string }> implements OnInit {
+  constructor(
+    private permissionLeaveService: PermissionLeaveService,
+    private vacationService: VacationService
+  ) {}
 
   @Input() entries: T[] = [];
   @Input() displayedColumns: string[] = [];
@@ -73,16 +86,16 @@ export class MatTableComponent<T> implements OnInit {
 
   filterEntriesByDate() {
     const currentData = [...this.entries];
-  
+
     if (this.startDate && this.endDate) {
       const start = new Date(this.startDate);
       start.setHours(0, 0, 0, 0);
-  
+
       const end = new Date(this.endDate);
       end.setHours(23, 59, 59, 999);
-  
+
       let filteredEntries;
-  
+
       if (this.localStorageKey === 'vacationEntries') {
         filteredEntries = currentData.filter((entry: any) => {
           const entryStartDate = new Date(entry.startDate).getTime();
@@ -90,12 +103,12 @@ export class MatTableComponent<T> implements OnInit {
           return (
             (entryStartDate >= start.getTime() &&
               entryStartDate <= end.getTime()) ||
-            (entryEndDate >= start.getTime() && entryEndDate <= end.getTime()) ||
+            (entryEndDate >= start.getTime() &&
+              entryEndDate <= end.getTime()) ||
             (entryStartDate <= start.getTime() && entryEndDate >= end.getTime())
           );
         });
       } else if (this.localStorageKey === 'permissionEntries') {
-        // Ensure entry.date is parsed correctly
         filteredEntries = currentData.filter((entry: any) => {
           const entryDate = new Date(entry.date).getTime();
           return entryDate >= start.getTime() && entryDate <= end.getTime();
@@ -103,9 +116,9 @@ export class MatTableComponent<T> implements OnInit {
       } else {
         filteredEntries = currentData;
       }
-  
+
       this.filteredData = new MatTableDataSource(filteredEntries);
-  
+
       this.filteredData.sortingDataAccessor = (item: any, property) => {
         switch (property) {
           case 'startDate':
@@ -118,19 +131,17 @@ export class MatTableComponent<T> implements OnInit {
             return item.reason;
           case 'status':
             return item.status;
-          // Add cases for permissionEntries fields
           case 'date':
             return new Date(item.date).getTime();
           case 'title':
             return item.title;
           case 'description':
             return item.description;
-          // Add more cases as needed for other fields
           default:
             return '';
         }
       };
-  
+
       this.filteredData.paginator = this.paginator;
       this.filteredData.sort = this.sort;
     } else {
@@ -146,7 +157,7 @@ export class MatTableComponent<T> implements OnInit {
   }
 
   deleteEntry(entry: T) {
-    const index = this.entries.findIndex(e => e === entry);
+    const index = this.entries.findIndex((e) => e === entry);
     if (index > -1) {
       this.entries.splice(index, 1);
       this.filteredData.data = [...this.entries];
@@ -154,6 +165,36 @@ export class MatTableComponent<T> implements OnInit {
     }
 
     localStorage.setItem(this.localStorageKey, JSON.stringify(this.entries));
+  }
+
+  approveEntry(entry: T): void {
+    const index = this.entries.findIndex((e) => e === entry);
+    if (index > -1) {
+      this.entries[index].status = 'Approved';
+      this.filteredData.data = [...this.entries];
+  
+      // Determine which key to use for local storage
+      const storageKey = this.localStorageKey === 'vacationEntries' || this.localStorageKey === 'permissionEntries'
+        ? this.localStorageKey
+        : 'defaultEntries';
+  
+      localStorage.setItem(storageKey, JSON.stringify(this.entries));
+    }
+  }
+
+  cancelEntry(entry: T): void {
+    const index = this.entries.findIndex((e) => e === entry);
+    if (index > -1) {
+      this.entries[index].status = 'Cancelled';
+      this.filteredData.data = [...this.entries];
+  
+      // Determine which key to use for local storage
+      const storageKey = this.localStorageKey === 'vacationEntries' || this.localStorageKey === 'permissionEntries'
+        ? this.localStorageKey
+        : 'defaultEntries';
+  
+      localStorage.setItem(storageKey, JSON.stringify(this.entries));
+    }
   }
 
   isWeekday = (date: Date | null): boolean => {

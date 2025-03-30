@@ -83,12 +83,11 @@ export class PermissionEntryDialogComponent {
     if (this.vacationEntries.some(entry => {
       const entryStartDate = new Date(entry.startDate);
       const entryEndDate = new Date(entry.endDate);
-      return entryStartDate <= date && entryEndDate >= date;
+      return entry.status === 'Approved' && entryStartDate <= date && entryEndDate >= date;
     })) {
       return false;
     }
   
-    // Block days where permission leave is already at 2 hours
     const totalDurationForDate = this.existingEntries
       .filter(entry => entry.date === dateString)
       .reduce((total, entry) => {

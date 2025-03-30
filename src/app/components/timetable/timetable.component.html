@@ -4,7 +4,12 @@
     <div class="date-container">
       <mat-form-field appearance="fill">
         <mat-label>Start Date</mat-label>
-        <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" [matDatepickerFilter]="isWeekday" />
+        <input
+          matInput
+          [matDatepicker]="startPicker"
+          [(ngModel)]="startDate"
+          [matDatepickerFilter]="isWeekday"
+        />
         <mat-datepicker-toggle
           matSuffix
           [for]="startPicker"
@@ -14,7 +19,12 @@
 
       <mat-form-field appearance="fill">
         <mat-label>End Date</mat-label>
-        <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" [matDatepickerFilter]="isWeekday" />
+        <input
+          matInput
+          [matDatepicker]="endPicker"
+          [(ngModel)]="endDate"
+          [matDatepickerFilter]="isWeekday"
+        />
         <mat-datepicker-toggle
           matSuffix
           [for]="endPicker"
@@ -42,10 +52,11 @@
               <button
                 mat-button
                 (click)="editEntry(element)"
-                [disabled]="computeStatus(element) === 'Weekend'"
+                [disabled]="isDisabled(element)"
               >
                 Edit
               </button>
+
               <!---<button mat-button (click)="deleteEntry(element)">Delete</button> --->
             </td>
           </ng-container>
@@ -58,21 +69,27 @@
           </ng-container>
 
           <ng-container matColumnDef="clockInTime">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Clock In Time</th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              Clock In Time
+            </th>
             <td mat-cell *matCellDef="let element">
               {{ element.clockInTime }}
             </td>
           </ng-container>
 
           <ng-container matColumnDef="clockOutTime">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Clock Out Time</th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              Clock Out Time
+            </th>
             <td mat-cell *matCellDef="let element">
               {{ element.clockOutTime }}
             </td>
           </ng-container>
 
           <ng-container matColumnDef="hoursWorked">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Hours Worked</th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              Hours Worked
+            </th>
             <td mat-cell *matCellDef="let element">
               {{ formatTime(element.hoursWorked * 3600) }}
             </td>
@@ -83,6 +100,11 @@
             <td mat-cell *matCellDef="let element">
               {{ computeStatus(element) }}
             </td>
+          </ng-container>
+
+          <ng-container matColumnDef="permissionLeaveDuration">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Permission Leave Duration</th>
+            <td mat-cell *matCellDef="let entry">{{ calculatePermissionLeaveDuration(entry) }}</td>
           </ng-container>
 
           <tr

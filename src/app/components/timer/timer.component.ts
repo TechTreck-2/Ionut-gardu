@@ -9,24 +9,36 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-timer',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatProgressBarModule, MatTableModule, MatSnackBarModule, MatIconModule],
+  imports: [
+    CommonModule,
+    MatButtonModule,
+    MatProgressBarModule,
+    MatTableModule,
+    MatSnackBarModule,
+    MatIconModule,
+  ],
   templateUrl: './timer.component.html',
   styleUrls: ['./timer.component.css'],
-  providers: [DatePipe]
+  providers: [DatePipe],
 })
 export class TimerComponent implements OnInit {
   time: number = 0;
   totalWorkTime: number = 8 * 3600; // 8 hours in seconds
 
-  displayedColumns: string[] = ['icon','label', 'value'];
-  dataSource: { label: string, value: string }[] = [];
+  displayedColumns: string[] = ['icon', 'label', 'value'];
+  dataSource: { label: string; value: string }[] = [];
   firstClockInDisplay: string = '---';
   clockOutTimeDisplay: string = '---';
   isWeekend: boolean = false;
-  constructor(private snackBar: MatSnackBar, private datePipe: DatePipe, private timerService: TimerService) {}
+  isVacation: boolean = false;
+  constructor(
+    private snackBar: MatSnackBar,
+    private datePipe: DatePipe,
+    private timerService: TimerService
+  ) {}
 
   ngOnInit(): void {
-    this.timerService.time$.subscribe(time => {
+    this.timerService.time$.subscribe((time) => {
       this.time = time;
       this.updateDataSource();
     });
@@ -34,6 +46,9 @@ export class TimerComponent implements OnInit {
     this.timerService.loadState();
   }
 
+  ngAfterViewInit() {
+    this.checkisVacation();
+  }
 
   logLocalStorageContent() {
     this.timerService.logLocalStorageContent();
@@ -47,7 +62,6 @@ export class TimerComponent implements OnInit {
     const statusMessage = this.timerService.startTimer();
     this.snackBar.open(statusMessage, 'Close', { duration: 2000 });
     this.updateDataSource();
-
   }
 
   stopTimer() {
@@ -64,20 +78,34 @@ export class TimerComponent implements OnInit {
   private updateDataSource() {
     this.dataSource = [
       { label: 'Current Date', value: this.currentDate },
-      { 
-        label: 'First Clock In', 
-        value: this.timerService.getFirstClockIn() 
-          ? this.timerService.getFirstClockIn()!.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) 
-          : '---' 
+      {
+        label: 'First Clock In',
+        value: this.timerService.getFirstClockIn()
+          ? this.timerService
+              .getFirstClockIn()!
+              .toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+              })
+          : '---',
       },
-      { 
-        label: 'Clock Out', 
-        value: this.timerService.getClockOutTime() 
-          ? this.timerService.getClockOutTime()!.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) 
-          : '---' 
+      {
+        label: 'Clock Out',
+        value: this.timerService.getClockOutTime()
+          ? this.timerService
+              .getClockOutTime()!
+              .toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+              })
+          : '---',
       },
       { label: 'All for Today', value: this.formattedTime },
-      { label: 'Time Left', value: this.timeLeft }
+      { label: 'Time Left', value: this.timeLeft },
     ];
   }
 
@@ -97,7 +125,7 @@ export class TimerComponent implements OnInit {
     const hours = Math.floor(remainingTime / 3600);
     const minutes = Math.floor((remainingTime % 3600) / 60);
     const seconds = remainingTime % 60;
-    if (remainingTime <= 0 || this.isWeekend) {
+    if (remainingTime <= 0 || this.isWeekend || this.isVacation) {
       return '00:00:00';
     }
     return `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
@@ -111,6 +139,11 @@ export class TimerComponent implements OnInit {
     return num < 10 ? '0' + num : num.toString();
   }
 
-  checkisWeekend(){
-    this.isWeekend = this.timerService.isWeekend(new Date());  }
+  checkisWeekend() {
+    this.isWeekend = this.timerService.isWeekend(new Date());
+  }
+  
+  checkisVacation() {
+    this.isVacation = this.timerService.isVacationDay(new Date());
+  }
 }
