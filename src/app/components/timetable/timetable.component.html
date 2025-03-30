@@ -1,5 +1,11 @@
 <div class="container-wrapper">
   <h1>View clocking status</h1>
+  <div class="info-container">
+    <p style="font-weight: bold;">Monthly Summary</p>
+    <p>Total Hours Worked: {{ calculateDetailedMonthlySummary().totalHoursWorked | number:'1.2-2' }}/{{calculateDetailedMonthlySummary().totalPossibleHours | number:'1.2-2'}} hours</p>
+    <p>Vacation Days Taken: {{ calculateDetailedMonthlySummary().vacationDays }}</p>
+    <p>Untracked/Partially Tracked Days: {{ calculateDetailedMonthlySummary().untrackedOrPartiallyTrackedDays }}</p>
+  </div>
   <div class="time-tracking-container">
     <div class="date-container">
       <mat-form-field appearance="fill">

@@ -105,7 +105,7 @@ export class MatTableComponent<T extends { status: string }> implements OnInit {
               entryStartDate <= end.getTime()) ||
             (entryEndDate >= start.getTime() &&
               entryEndDate <= end.getTime()) ||
-            (entryStartDate <= start.getTime() && entryEndDate >= end.getTime())
+            (entryStartDate >= start.getTime() && entryEndDate <= end.getTime())
           );
         });
       } else if (this.localStorageKey === 'permissionEntries') {

@@ -45,11 +45,11 @@
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Actions</th>
           <td mat-cell *matCellDef="let entry">
-            <button mat-button color="warn" (click)="deleteEntry(entry)">
+            <button mat-button color="warn" (click)="deleteEntry(entry)" [disabled]="entry.status == 'Approved'">
               Delete
             </button>
             <button mat-button color="warn" (click)="approveEntry(entry)">Approve</button>
-            <button mat-button color="warn" (click)="cancelEntry(entry)">Cancel</button>
+            <button mat-button color="warn" (click)="cancelEntry(entry)" >Cancel</button>
 
           </td>
         </ng-container>

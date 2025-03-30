@@ -73,3 +73,14 @@
 .mat-mdc-select-value {
   color: #333;
 }
+
+.info-container{
+  border-radius: 5px;
+  padding: 10px;
+  background-color: #cfe4fd;
+  margin-bottom: 20px;
+}
+
+.info-container p {
+  margin: 5px;
+}

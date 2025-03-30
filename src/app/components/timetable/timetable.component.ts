@@ -1,4 +1,10 @@
-import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  OnDestroy,
+  SimpleChanges,
+} from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -52,7 +58,6 @@ export class TimeTrackingComponent implements OnInit {
     'permissionLeaveDuration',
     'hoursWorked',
     'status',
-    
   ];
   dataSource = new MatTableDataSource<TimeEntry>();
   filteredData = new MatTableDataSource<TimeEntry>();
@@ -70,9 +75,7 @@ export class TimeTrackingComponent implements OnInit {
     private permissionLeaveService: PermissionLeaveService,
     private snackBar: MatSnackBar,
     public dialog: MatDialog
-  ) {
-    
-  }
+  ) {}
 
   ngOnInit(): void {
     this.loadFromLocalStorage();
@@ -126,13 +129,12 @@ export class TimeTrackingComponent implements OnInit {
     setTimeout(() => {
       this.filteredData.paginator = this.paginator;
       this.filteredData.sort = this.sort;
-      this.sort.active = 'date'; 
+      this.sort.active = 'date';
       this.sort.direction = 'asc';
     }, 0);
   }
 
   ngOnDestroy(): void {
-    
     this.startDate = null;
     this.endDate = null;
     this.filteredData = new MatTableDataSource(this.dataSource.data);
@@ -144,20 +146,32 @@ export class TimeTrackingComponent implements OnInit {
   }
 
   calculatePermissionLeaveDuration(entry: TimeEntry): string {
-   
     const formattedDate = this.formatDate(new Date(entry.date));
   
-    const permissionEntry = this.permissionEntries.find(
-      (pe) => pe.date === formattedDate && pe.status === 'Approved' 
+    const permissionEntries = this.permissionEntries.filter(
+      (pe) => pe.date === formattedDate && pe.status === 'Approved'
     );
-    
-    return permissionEntry
-      ? this.permissionLeaveService.calculateDuration(permissionEntry)
-      : '---';
+  
+    if (permissionEntries.length === 0) {
+      return '---';
+    }
+  
+    let totalSeconds = 0;
+    for (const permissionEntry of permissionEntries) {
+      const durationString = this.permissionLeaveService.calculateDuration(permissionEntry);
+      const [hours, minutes, seconds] = durationString.split(':').map(Number);
+      totalSeconds += hours * 3600 + minutes * 60 + seconds;
+    }
+  
+    const totalHours = Math.floor(totalSeconds / 3600);
+    const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
+    const totalSecs = totalSeconds % 60;
+  
+    return `${this.pad(totalHours)}:${this.pad(totalMinutes)}:${this.pad(totalSecs)}`;
   }
   
+
   private formatDate(date: Date): string {
-    
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
@@ -169,18 +183,16 @@ export class TimeTrackingComponent implements OnInit {
 
     if (this.startDate && this.endDate) {
       const start = new Date(this.startDate);
-      start.setHours(0, 0, 0, 0); 
+      start.setHours(0, 0, 0, 0);
 
       const end = new Date(this.endDate);
-      end.setHours(23, 59, 59, 999); 
+      end.setHours(23, 59, 59, 999);
 
-      
       const filteredEntries = currentData.filter((entry) => {
         const entryDate = new Date(entry.date).getTime();
         return entryDate >= start.getTime() && entryDate <= end.getTime();
       });
 
-      
       this.filteredData = new MatTableDataSource(filteredEntries);
 
       this.filteredData.sortingDataAccessor = (item, property) => {
@@ -202,19 +214,19 @@ export class TimeTrackingComponent implements OnInit {
         }
       };
 
-      this.filteredData.paginator = this.paginator; 
+      this.filteredData.paginator = this.paginator;
       this.filteredData.sort = this.sort;
     } else {
-      this.loadFromLocalStorage(); 
+      this.loadFromLocalStorage();
     }
   }
 
   private getPermissionLeaveDurationInSeconds(item: TimeEntry): number {
     const durationString = this.calculatePermissionLeaveDuration(item);
     if (durationString === '---') {
-      return 0; 
+      return 0;
     }
-  
+
     const [hours, minutes, seconds] = durationString.split(':').map(Number);
     return hours * 3600 + minutes * 60 + seconds;
   }
@@ -233,7 +245,6 @@ export class TimeTrackingComponent implements OnInit {
         this.validateTimeFormat(result.clockInTime) &&
         this.validateTimeFormat(result.clockOutTime)
       ) {
-
         entry.clockInTime = result.clockInTime;
         entry.clockOutTime = result.clockOutTime;
         entry.hoursWorked = this.calculateHoursWorked(
@@ -296,48 +307,52 @@ export class TimeTrackingComponent implements OnInit {
     }
   }
 
-  calculateHoursWorked(clockIn: string, clockOut: string, date: string): number {
+  calculateHoursWorked(
+    clockIn: string,
+    clockOut: string,
+    date: string
+  ): number {
     const clockInParts = clockIn.split(':').map(Number);
     const clockOutParts = clockOut.split(':').map(Number);
-  
+
     if (clockInParts.length !== 3 || clockOutParts.length !== 3) {
       console.error('Invalid time format. Expected HH:mm:ss');
       return 0;
     }
-  
+
     const [inHours, inMinutes, inSeconds] = clockInParts;
     const [outHours, outMinutes, outSeconds] = clockOutParts;
-  
+
     const inDate = new Date();
     const outDate = new Date();
-  
+
     inDate.setHours(inHours, inMinutes, inSeconds, 0);
     outDate.setHours(outHours, outMinutes, outSeconds, 0);
-  
+
     const diffInMilliseconds = outDate.getTime() - inDate.getTime();
-    let diffInHours = diffInMilliseconds / 1000 / 3600; 
-  
-    
+    let diffInHours = diffInMilliseconds / 1000 / 3600;
+
     const formattedDate = this.formatDate(new Date(date));
     //console.log('Checking for permission entry on formatted date:', formattedDate);
 
-  
-    
     const permissionEntry = this.permissionEntries.find(
       (pe) => pe.date === formattedDate && pe.status === 'Approved'
     );
     //console.log('Permission entry:', permissionEntry); // Debugging log
-  
+
     if (permissionEntry) {
-      const permissionDuration = this.permissionLeaveService.calculateDuration(permissionEntry);
-      const [permHours, permMinutes, permSeconds] = permissionDuration.split(':').map(Number);
-      const permDurationInHours = permHours + permMinutes / 60 + permSeconds / 3600;
+      const permissionDuration =
+        this.permissionLeaveService.calculateDuration(permissionEntry);
+      const [permHours, permMinutes, permSeconds] = permissionDuration
+        .split(':')
+        .map(Number);
+      const permDurationInHours =
+        permHours + permMinutes / 60 + permSeconds / 3600;
       //console.log('Permission duration in hours:', permDurationInHours); // Debugging log
-      
+
       diffInHours -= permDurationInHours;
     }
-  
-    
+
     return Math.max(0, diffInHours);
   }
 
@@ -345,13 +360,11 @@ export class TimeTrackingComponent implements OnInit {
     const seconds = entry.hoursWorked;
     const day = entry.date;
     const entryDate = new Date(day);
-  
-    
+
     if (this.timerService.isWeekend(entryDate)) {
       return 'Weekend';
     }
-  
-    
+
     if (this.timerService.isVacationDay(entryDate)) {
       return 'Vacation Day';
     } else if (seconds < 0) {
@@ -390,4 +403,52 @@ export class TimeTrackingComponent implements OnInit {
     const day = (date || new Date()).getDay();
     return day !== 0 && day !== 6;
   };
+
+  calculateDetailedMonthlySummary() {
+    if (!this.startDate || !this.endDate) {
+      return {
+        totalHoursWorked: 0,
+        totalPossibleHours: 0,
+        vacationDays: 0,
+        untrackedOrPartiallyTrackedDays: 0,
+      };
+    }
+  
+    const start = new Date(this.startDate);
+    start.setDate(1); 
+    start.setHours(0, 0, 0, 0);
+  
+    const end = new Date(this.startDate);
+    end.setMonth(end.getMonth() + 1); 
+    end.setDate(0); 
+    end.setHours(23, 59, 59, 999);
+  
+    const monthlyEntries = this.dataSource.data.filter((entry) => {
+      const entryDate = new Date(entry.date).getTime();
+      return entryDate >= start.getTime() && entryDate <= end.getTime();
+    });
+  
+    let totalHoursWorked = 0;
+    let vacationDays = 0;
+    let untrackedOrPartiallyTrackedDays = 0;
+    const totalPossibleHours = monthlyEntries.length * 8; 
+  
+    monthlyEntries.forEach((entry) => {
+      totalHoursWorked += entry.hoursWorked;
+      const status = this.computeStatus(entry);
+  
+      if (status === 'Vacation Day') {
+        vacationDays++;
+      } else if (status === 'Untracked' || status === 'Partially tracked') {
+        untrackedOrPartiallyTrackedDays++;
+      }
+    });
+  
+    return {
+      totalHoursWorked,
+      totalPossibleHours,
+      vacationDays,
+      untrackedOrPartiallyTrackedDays,
+    };
+  }
 }
