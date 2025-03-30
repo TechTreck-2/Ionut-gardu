@@ -195,6 +195,8 @@ export class TimeTrackingComponent implements OnInit {
             return item.clockOutTime ? item.clockOutTime : '';
           case 'permissionLeaveDuration':
             return this.getPermissionLeaveDurationInSeconds(item);
+          case 'status':
+            return this.computeStatus(item);
           default:
             return '';
         }
@@ -210,7 +212,7 @@ export class TimeTrackingComponent implements OnInit {
   private getPermissionLeaveDurationInSeconds(item: TimeEntry): number {
     const durationString = this.calculatePermissionLeaveDuration(item);
     if (durationString === '---') {
-      return 0; // Return 0 if no permission leave or not approved
+      return 0; 
     }
   
     const [hours, minutes, seconds] = durationString.split(':').map(Number);
