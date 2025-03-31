@@ -6,6 +6,8 @@ import { MatTableModule } from '@angular/material/table';
 import { CommonModule, DatePipe } from '@angular/common';
 import { TimerService } from '../../services/timer.service';
 import { MatIconModule } from '@angular/material/icon';
+import { TimeEntry } from '../../models/time-entry.model'; // Import the TimeEntry interface
+
 @Component({
   selector: 'app-timer',
   standalone: true,
@@ -27,26 +29,23 @@ export class TimerComponent implements OnInit {
 
   displayedColumns: string[] = ['icon', 'label', 'value'];
   dataSource: { label: string; value: string }[] = [];
-  firstClockInDisplay: string = '---';
-  clockOutTimeDisplay: string = '---';
   isWeekend: boolean = false;
   isVacation: boolean = false;
   snackBar = inject(MatSnackBar);
   datePipe = inject(DatePipe);
   timerService = inject(TimerService);
-  
 
   ngOnInit(): void {
     this.timerService.time$.subscribe((time) => {
       this.time = time;
       this.updateDataSource();
     });
-    this.checkisWeekend();
+    this.checkIsWeekend();
     this.timerService.loadState();
   }
 
   ngAfterViewInit() {
-    this.checkisVacation();
+    this.checkIsVacation();
   }
 
   logLocalStorageContent() {
@@ -75,33 +74,19 @@ export class TimerComponent implements OnInit {
   }
 
   private updateDataSource() {
+    const timeEntries: TimeEntry[] = this.timerService.loadTimeEntriesFromLocalStorage();
+    const today = new Date().toDateString();
+    const todayEntry = timeEntries.find(entry => entry.date === today);
+
     this.dataSource = [
       { label: 'Current Date', value: this.currentDate },
       {
         label: 'First Clock In',
-        value: this.timerService.getFirstClockIn()
-          ? this.timerService
-              .getFirstClockIn()!
-              .toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-              })
-          : '---',
+        value: todayEntry?.clockInTime || '---',
       },
       {
         label: 'Clock Out',
-        value: this.timerService.getClockOutTime()
-          ? this.timerService
-              .getClockOutTime()!
-              .toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-              })
-          : '---',
+        value: todayEntry?.clockOutTime || '---',
       },
       { label: 'All for Today', value: this.formattedTime },
       { label: 'Time Left', value: this.timeLeft },
@@ -138,11 +123,11 @@ export class TimerComponent implements OnInit {
     return num < 10 ? '0' + num : num.toString();
   }
 
-  checkisWeekend() {
+  checkIsWeekend() {
     this.isWeekend = this.timerService.isWeekend(new Date());
   }
-  
-  checkisVacation() {
+
+  checkIsVacation() {
     this.isVacation = this.timerService.isVacationDay(new Date());
   }
 }
