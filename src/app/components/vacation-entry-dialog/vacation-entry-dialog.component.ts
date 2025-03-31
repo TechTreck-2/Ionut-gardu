@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, inject, Inject } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -34,10 +34,10 @@ export class VacationEntryDialogComponent {
   errorMessage: string = '';
   existingEntries: VacationEntry[] = [];
   vacationDaysLeft: number;
-
+  fb = inject (FormBuilder);
+  dialogRef = inject (MatDialogRef<VacationEntryDialogComponent>);
+  
   constructor(
-    private fb: FormBuilder,
-    public dialogRef: MatDialogRef<VacationEntryDialogComponent>,
     @Inject(MAT_DIALOG_DATA)
     public data: { existingEntries: VacationEntry[]; vacationDaysLeft: number }
   ) {

@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, inject, Inject } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -34,14 +34,11 @@ export class PermissionEntryDialogComponent {
   form: FormGroup;
   errorMessage: string = '';
   existingEntries: PermissionEntry[] = [];
-  vacationEntries: VacationEntry[] = []; // Assume this is populated with vacation entries
-
-  constructor(
-    private vacationService: VacationService,
-    private fb: FormBuilder,
-    public dialogRef: MatDialogRef<PermissionEntryDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any
-  ) {
+  vacationEntries: VacationEntry[] = []; 
+  vacationService = inject(VacationService);
+  fb = inject(FormBuilder);
+  dialogRef = inject(MatDialogRef<PermissionEntryDialogComponent>);
+  constructor(@Inject(MAT_DIALOG_DATA) public data: any) {
     this.existingEntries = data.existingEntries || [];
     this.vacationEntries = this.vacationService.getVacationEntries();
     this.form = this.fb.group({
@@ -71,38 +68,51 @@ export class PermissionEntryDialogComponent {
     if (!date) {
       return false;
     }
-  
+
     const day = date.getDay();
     if (day === 0 || day === 6) {
       return false; // Block weekends
     }
-  
+
     const dateString = this.formatDate(date);
-  
+
     // Block vacation days
-    if (this.vacationEntries.some(entry => {
-      const entryStartDate = new Date(entry.startDate);
-      const entryEndDate = new Date(entry.endDate);
-      return entry.status === 'Approved' && entryStartDate <= date && entryEndDate >= date;
-    })) {
+    if (
+      this.vacationEntries.some((entry) => {
+        const entryStartDate = new Date(entry.startDate);
+        const entryEndDate = new Date(entry.endDate);
+        return (
+          entry.status === 'Approved' &&
+          entryStartDate <= date &&
+          entryEndDate >= date
+        );
+      })
+    ) {
       return false;
     }
-  
+
     const totalDurationForDate = this.existingEntries
-      .filter(entry => entry.date === dateString)
+      .filter((entry) => entry.date === dateString)
       .reduce((total, entry) => {
-        const [entryStartHour, entryStartMinute] = entry.startTime.split(':').map(Number);
-        const [entryEndHour, entryEndMinute] = entry.endTime.split(':').map(Number);
-  
+        const [entryStartHour, entryStartMinute] = entry.startTime
+          .split(':')
+          .map(Number);
+        const [entryEndHour, entryEndMinute] = entry.endTime
+          .split(':')
+          .map(Number);
+
         const entryStartDate = new Date();
         entryStartDate.setHours(entryStartHour, entryStartMinute, 0, 0);
-  
+
         const entryEndDate = new Date();
         entryEndDate.setHours(entryEndHour, entryEndMinute, 0, 0);
-  
-        return total + (entryEndDate.getTime() - entryStartDate.getTime()) / (1000 * 60 * 60);
+
+        return (
+          total +
+          (entryEndDate.getTime() - entryStartDate.getTime()) / (1000 * 60 * 60)
+        );
       }, 0);
-  
+
     return totalDurationForDate < 2; // Allow only if less than 2 hours
   };
 
@@ -142,10 +152,14 @@ export class PermissionEntryDialogComponent {
         }
 
         const totalDurationForDate = this.existingEntries
-          .filter(entry => entry.date === this.formatDate(date))
+          .filter((entry) => entry.date === this.formatDate(date))
           .reduce((total, entry) => {
-            const [entryStartHour, entryStartMinute] = entry.startTime.split(':').map(Number);
-            const [entryEndHour, entryEndMinute] = entry.endTime.split(':').map(Number);
+            const [entryStartHour, entryStartMinute] = entry.startTime
+              .split(':')
+              .map(Number);
+            const [entryEndHour, entryEndMinute] = entry.endTime
+              .split(':')
+              .map(Number);
 
             const entryStartDate = new Date();
             entryStartDate.setHours(entryStartHour, entryStartMinute, 0, 0);
@@ -153,11 +167,16 @@ export class PermissionEntryDialogComponent {
             const entryEndDate = new Date();
             entryEndDate.setHours(entryEndHour, entryEndMinute, 0, 0);
 
-            return total + (entryEndDate.getTime() - entryStartDate.getTime()) / (1000 * 60 * 60);
+            return (
+              total +
+              (entryEndDate.getTime() - entryStartDate.getTime()) /
+                (1000 * 60 * 60)
+            );
           }, 0);
 
         if (totalDurationForDate + newEntryDuration > 2) {
-          this.errorMessage = 'Total duration for the day must not exceed 2 hours.';
+          this.errorMessage =
+            'Total duration for the day must not exceed 2 hours.';
         } else {
           this.errorMessage = '';
         }

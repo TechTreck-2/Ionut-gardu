@@ -4,6 +4,7 @@ import {
   ViewChild,
   OnDestroy,
   SimpleChanges,
+  inject,
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
@@ -69,14 +70,11 @@ export class TimeTrackingComponent implements OnInit {
   endDate: Date | null = null;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-
-  constructor(
-    private timerService: TimerService,
-    private permissionLeaveService: PermissionLeaveService,
-    private snackBar: MatSnackBar,
-    public dialog: MatDialog
-  ) {}
-
+  timerService = inject(TimerService);
+  permissionLeaveService = inject(PermissionLeaveService);
+  snackBar = inject(MatSnackBar);
+  dialog = inject(MatDialog);
+  
   ngOnInit(): void {
     this.loadFromLocalStorage();
     this.loadPermissionEntries();

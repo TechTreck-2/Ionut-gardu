@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { VacationService } from '../../services/vacation.service';
@@ -17,33 +17,39 @@ import { CommonModule } from '@angular/common';
 })
 export class VacationPlanningComponent {
   entries: VacationEntry[] = [];
-  displayedColumns: string[] = ['actions','startDate', 'endDate', 'duration', 'reason', 'status'];
+  displayedColumns: string[] = [
+    'actions',
+    'startDate',
+    'endDate',
+    'duration',
+    'reason',
+    'status',
+  ];
   vacationDaysLeft: number = 21;
-
-  constructor(
-    private vacationService: VacationService,
-    public dialog: MatDialog,
-    private snackBar: MatSnackBar
-  ) {
-    this.entries = this.vacationService.getVacationEntries();
-    this.updateVacationDaysLeft();
-  }
+  vacationService = inject(VacationService);
+  dialog = inject(MatDialog);
+  snackBar = inject(MatSnackBar);
+  
 
   ngOnInit(): void {
     this.entries = this.vacationService.getVacationEntries();
+    this.updateVacationDaysLeft();
   }
 
   openModal() {
     const dialogRef = this.dialog.open(VacationEntryDialogComponent, {
       width: '300px',
-      data: { existingEntries: this.entries, vacationDaysLeft: this.vacationDaysLeft } // Pass vacationDaysLeft
+      data: {
+        existingEntries: this.entries,
+        vacationDaysLeft: this.vacationDaysLeft,
+      }, // Pass vacationDaysLeft
     });
-  
-    dialogRef.afterClosed().subscribe(result => {
+
+    dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         const startDate = new Date(result.startDate);
         const endDate = new Date(result.endDate);
-  
+
         if (startDate <= endDate) {
           const duration = this.calculateWeekdays(startDate, endDate);
           const newEntry: VacationEntry = {
@@ -66,7 +72,8 @@ export class VacationPlanningComponent {
 
     while (currentDate <= endDate) {
       const dayOfWeek = currentDate.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Exclude Sundays (0) and Saturdays (6)
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        // Exclude Sundays (0) and Saturdays (6)
         count++;
       }
       currentDate.setDate(currentDate.getDate() + 1);
@@ -82,7 +89,7 @@ export class VacationPlanningComponent {
   }
 
   deleteEntry(entry: VacationEntry) {
-    const index = this.entries.findIndex(e => e === entry);
+    const index = this.entries.findIndex((e) => e === entry);
     if (index > -1) {
       this.entries.splice(index, 1);
       localStorage.setItem('vacationEntries', JSON.stringify(this.entries));
@@ -91,7 +98,10 @@ export class VacationPlanningComponent {
   }
 
   updateVacationDaysLeft() {
-    const usedDays = this.entries.reduce((total, entry) => total + entry.duration, 0);
+    const usedDays = this.entries.reduce(
+      (total, entry) => total + entry.duration,
+      0
+    );
     this.vacationDaysLeft = 21 - usedDays;
   }
 }

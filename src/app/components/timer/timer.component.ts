@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -31,11 +31,10 @@ export class TimerComponent implements OnInit {
   clockOutTimeDisplay: string = '---';
   isWeekend: boolean = false;
   isVacation: boolean = false;
-  constructor(
-    private snackBar: MatSnackBar,
-    private datePipe: DatePipe,
-    private timerService: TimerService
-  ) {}
+  snackBar = inject(MatSnackBar);
+  datePipe = inject(DatePipe);
+  timerService = inject(TimerService);
+  
 
   ngOnInit(): void {
     this.timerService.time$.subscribe((time) => {

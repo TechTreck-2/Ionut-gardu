@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, inject, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -25,8 +25,8 @@ export interface DialogData {
   styleUrls: ['./edit-time-dialog.component.css']
 })
 export class EditTimeDialogComponent {
+  dialogRef = inject(MatDialogRef<EditTimeDialogComponent>);
   constructor(
-    public dialogRef: MatDialogRef<EditTimeDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: DialogData
   ) {}
 

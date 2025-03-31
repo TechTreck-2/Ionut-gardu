@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableComponent } from '../common/mat-table/mat-table.component';
@@ -18,12 +18,10 @@ import { PermissionEntryDialogComponent } from '../permission-entry-dialog/permi
 export class PermissionLeaveComponent implements OnInit {
   entries: PermissionEntry[] = [];
   displayedColumns: string[] = ['actions', 'date', 'startTime', 'endTime', 'leave-duration', 'status'];
-
-  constructor(
-    private permissionLeaveService: PermissionLeaveService,
-    public dialog: MatDialog,
-    private snackBar: MatSnackBar
-  ) {}
+  permissionLeaveService = inject(PermissionLeaveService);
+  dialog = inject(MatDialog);
+  snackBar = inject(MatSnackBar);
+  
 
   ngOnInit(): void {
     this.entries = this.permissionLeaveService.getPermissionEntries();

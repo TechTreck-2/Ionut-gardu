@@ -6,6 +6,7 @@ import {
   SimpleChanges,
   Output,
   EventEmitter,
+  inject,
 } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -22,8 +23,8 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
 import { PermissionLeaveService } from '../../../services/permission-leave.service';
 import { VacationService } from '../../../services/vacation.service';
-import { VacationEntry } from '../../../models/vacation-entry.model'; // Ensure correct import
-import { PermissionEntry } from '../../../models/permission-entry.model'; // Ensure correct import
+import { VacationEntry } from '../../../models/vacation-entry.model'; 
+import { PermissionEntry } from '../../../models/permission-entry.model'; 
 @Component({
   selector: 'app-mat-table',
   templateUrl: './mat-table.component.html',
@@ -43,10 +44,8 @@ import { PermissionEntry } from '../../../models/permission-entry.model'; // Ens
   ],
 })
 export class MatTableComponent<T extends { status: string }> implements OnInit {
-  constructor(
-    private permissionLeaveService: PermissionLeaveService,
-    private vacationService: VacationService
-  ) {}
+  permissionLeaveService = inject (PermissionLeaveService);
+  
 
   @Input() entries: T[] = [];
   @Input() displayedColumns: string[] = [];
