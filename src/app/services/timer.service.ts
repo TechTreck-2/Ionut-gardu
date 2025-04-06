@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, interval, Subscription } from 'rxjs';
 import { VacationService } from './vacation.service';
 import { VacationEntry } from '../models/vacation-entry.model';
+import { TimeEntry } from '../models/time-entry.model';
 
 @Injectable({
   providedIn: 'root',
@@ -14,6 +15,7 @@ export class TimerService {
   private firstClockIn: Date | null = null;
   private clockOutTime: Date | null = null;
   vacationEntries: VacationEntry[] = [];
+  timeEntries: TimeEntry[] = [];
   vacationService = inject(VacationService);
   constructor() {
     this.loadState();

@@ -1,8 +1,10 @@
-<mat-toolbar style="background-color: #005cbb; color: #FFF;">
-  <button mat-icon-button (click)="toggleSidebar(); sidenav.toggle()">
-    <mat-icon style="color: #FFF;">menu</mat-icon>
+<mat-toolbar class="toolbar">
+  <button mat-icon-button (click)="sidenav.toggle();">
+    <mat-icon class="button">menu</mat-icon>
   </button>
-  Timetracking App
+  <h1>Timetracking App</h1>
+  <mat-slide-toggle (change)="toggleTheme()">Dark Theme</mat-slide-toggle>
+
 </mat-toolbar>
 
 <mat-sidenav-container class="sidenav-container" style="border-radius: 0;">

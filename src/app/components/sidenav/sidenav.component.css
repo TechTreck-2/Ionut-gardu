@@ -1,12 +1,28 @@
+.toolbar {
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-primary);
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif!important;
+  }
+
+.toolbar h1 {
+  color: var(--mat-sys-primary)!important;
+  font-weight: 400!important;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif!important;
+}
+
+.button {
+  color: var(--mat-sys-on-primary);
+}
+
 .sidenav-container {
     width: auto;
     height: 93vh;
     margin: 0px;
     border: 0px;
-    background: #fff;
+    background: --mat-sys-on-primary;
   }
 
-  mat-sidenav {
+  .mat-sidenav {
     width: 250px;
     font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif!important;
   }
@@ -17,10 +33,10 @@
   }
   
   .selected-text {
-    color: #004a99; 
+    color: var(--mat-sys-on-primary-fixed-variant); 
   }
 
   .sidenav-text{
-    color: #333!important;
+    color: var(--mat-sys-on-surface)!important;
   }
 

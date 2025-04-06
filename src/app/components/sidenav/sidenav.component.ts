@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import { CommonModule } from '@angular/common';
 import { MatListModule } from '@angular/material/list';
@@ -9,6 +9,9 @@ import { TimerComponent } from '../timer/timer.component';
 import { TimeTrackingComponent } from '../timetable/timetable.component';
 import { VacationPlanningComponent } from '../vacation-planning/vacation-planning.component';
 import { PermissionLeaveComponent } from '../permission-leave/permission-leave.component';
+import { StyleManagerService } from '../../services/style-manager.service';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-sidenav',
   imports: [
@@ -21,23 +24,28 @@ import { PermissionLeaveComponent } from '../permission-leave/permission-leave.c
     TimerComponent,
     TimeTrackingComponent,
     VacationPlanningComponent,
-    PermissionLeaveComponent
+    PermissionLeaveComponent,
+    MatSlideToggleModule,
+    FormsModule
 ],
   templateUrl: './sidenav.component.html',
   styleUrl: './sidenav.component.css'
 })
 export class SidenavComponent {
-
+  styleManager = inject(StyleManagerService);
   selectedComponent = 'dashboard';
   isExpanded = true;
+  isChecked = false;
 
   selectComponent(component: string) {
     this.selectedComponent = component;
   }
 
-  toggleSidebar() {
-    this.isExpanded = !this.isExpanded;
-    console.log('isExpanded', this.isExpanded);
+  toggleTheme() {
+    this.isChecked = !this.isChecked;
+    const theme = this.isChecked ? 'assets/cyan-orange.css' : 'assets/azure-blue.css';
+    this.styleManager.setStyle(theme);
   }
+  
 
 }
