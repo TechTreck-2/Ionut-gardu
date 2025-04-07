@@ -5,13 +5,13 @@
   }
 
 .toolbar h1 {
-  color: var(--mat-sys-primary)!important;
+  color: var(--mat-sys-primary-fixed-dim)!important;
   font-weight: 400!important;
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif!important;
 }
 
 .button {
-  color: var(--mat-sys-on-primary);
+  color: var(--mat-sys-primary-fixed-dim);
 }
 
 .sidenav-container {
@@ -19,7 +19,7 @@
     height: 93vh;
     margin: 0px;
     border: 0px;
-    background: --mat-sys-on-primary;
+    
   }
 
   .mat-sidenav {
@@ -33,7 +33,7 @@
   }
   
   .selected-text {
-    color: var(--mat-sys-on-primary-fixed-variant); 
+    color: var(--mat-sys-primary); 
   }
 
   .sidenav-text{

@@ -30,12 +30,12 @@
     width: 100%;
     height: 350px;
     overflow: auto;
-    background-color: #fff;
+    background-color: var(--mat-sys-background);
   }
   
   .mat-mcd-cell {
     padding: 16px;
-    color: #555;
+    color: var(--mat-sys-on-surface);
   }
   
   .mat-mdc-row .mat-mdc-cell {
@@ -43,25 +43,25 @@
     border-top: 1px solid transparent;
     cursor: pointer;
     font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
-    background-color: #fff;
-    color: #333;
+    background-color: var(--mat-sys-background);
+    color: var(--mat-sys-on-surface);
   }
   
   
   .mat-mdc-table {
-    background-color: #f8f8f8;
+    background-color: var(--mat-sys-background);
     font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
   }
   
   .mat-mdc-paginator {
-    background-color: #f8f8f8;
-    color: #333;
+    background-color: var(--mat-sys-background);
+    color: var(--mat-sys-on-surface);
     width: 100%;
     border-top: 1px solid #333;
     font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
   }
   
   .mat-mdc-select-value {
-    color: #333;
+    color: var(--mat-sys-on-surface);
   }
   
