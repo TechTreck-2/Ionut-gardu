@@ -141,5 +141,6 @@ export class TimerComponent implements OnInit {
   
   checkisVacation() {
     this.isVacation = this.timerService.isVacationDay(new Date());
+    
   }
 }

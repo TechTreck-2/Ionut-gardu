@@ -262,16 +262,22 @@ export class TimerService {
   isVacationDay(date: Date): boolean {
     if (this.isLocalStorageAvailable()) {
       this.vacationEntries = this.vacationService.getVacationEntries();
+      const targetDate = new Date(date);
+      targetDate.setHours(0, 0, 0, 0); 
+  
       return this.vacationEntries.some((vacation) => {
         const vacationStart = new Date(vacation.startDate);
         const vacationEnd = new Date(vacation.endDate);
+        vacationStart.setHours(0, 0, 0, 0); 
+        vacationEnd.setHours(0, 0, 0, 0); 
+  
         return (
           vacation.status === 'Approved' &&
-          date >= vacationStart &&
-          date <= vacationEnd
+          targetDate >= vacationStart &&
+          targetDate <= vacationEnd
         );
       });
     }
-    return false; 
+    return false;
   }
 }
