@@ -6,6 +6,7 @@ import { MatTableModule } from '@angular/material/table';
 import { CommonModule, DatePipe } from '@angular/common';
 import { TimerService } from '../../services/timer.service';
 import { MatIconModule } from '@angular/material/icon';
+import { VacationService } from '../../services/vacation.service';
 @Component({
   selector: 'app-timer',
   standalone: true,
@@ -34,7 +35,8 @@ export class TimerComponent implements OnInit {
   snackBar = inject(MatSnackBar);
   datePipe = inject(DatePipe);
   timerService = inject(TimerService);
-  
+  vacationService = inject(VacationService);
+  vacationDaysLeft!: number; // Default value, will be updated from service
 
   ngOnInit(): void {
     this.timerService.time$.subscribe((time) => {
@@ -44,6 +46,12 @@ export class TimerComponent implements OnInit {
     this.checkisWeekend();
     this.checkisVacation();
     this.timerService.loadState();
+    this.vacationService.updateVacationDaysLeft(); // Update vacation days left
+    this.vacationDaysLeft = this.vacationService.getVacationDaysLeft();
+  }
+
+  ngAfterViewInit():void {
+    
   }
 
   logLocalStorageContent() {
@@ -75,7 +83,7 @@ export class TimerComponent implements OnInit {
     const clockIn = this.timerService.getFirstClockIn();
     const clockOut = this.timerService.getClockOutTime();
     const date = new Date(); // Assuming you want to use the current date
-  
+
     this.dataSource = [
       { label: 'Current Date', value: this.currentDate },
       {
@@ -102,27 +110,27 @@ export class TimerComponent implements OnInit {
       },
       {
         label: 'All for Today',
-        value: clockIn && clockOut
-          ? this.calculateAndFormatHoursWorked(
-              clockIn.toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-              }),
-              clockOut.toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-              }),
-              this.currentDate
-            )
-          : '---',
+        value:
+          clockIn && clockOut
+            ? this.calculateAndFormatHoursWorked(
+                clockIn.toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: false,
+                }),
+                clockOut.toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: false,
+                }),
+                this.currentDate
+              )
+            : '---',
       },
       { label: 'Time Left', value: this.timeLeft },
     ];
-   
   }
 
   get workPercentage(): number {
@@ -158,24 +166,29 @@ export class TimerComponent implements OnInit {
   checkisWeekend() {
     this.isWeekend = this.timerService.isWeekend(new Date());
   }
-  
+
   checkisVacation() {
     this.isVacation = this.timerService.isVacationDay(new Date());
-    
   }
 
-  calculateAndFormatHoursWorked(clockIn: string, clockOut: string, date: string): string {
-    const hoursWorked = this.timerService.calculateHoursWorked(clockIn, clockOut, date);
+  calculateAndFormatHoursWorked(
+    clockIn: string,
+    clockOut: string,
+    date: string
+  ): string {
+    const hoursWorked = this.timerService.calculateHoursWorked(
+      clockIn,
+      clockOut,
+      date
+    );
     return this.formatHoursToHHMMSS(hoursWorked);
   }
 
-  
   private formatHoursToHHMMSS(totalHours: number): string {
     const totalSeconds = totalHours * 3600; // Convert hours to seconds
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = Math.floor(totalSeconds % 60);
     return `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
-}
-
+  }
 }

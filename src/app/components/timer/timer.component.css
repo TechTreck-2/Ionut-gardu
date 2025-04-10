@@ -86,3 +86,14 @@ button {
   padding: 16px;
   color: #555;
 }
+
+.info-container{
+  border-radius: 5px;
+  padding: 10px;
+  background-color: var(--mat-sys-primary-fixed);
+  margin-bottom: 20px;
+}
+
+.info-container p {
+  margin: 5px;
+}

@@ -1,5 +1,8 @@
 <div class="timer-container">
   <h1>User Activity</h1>
+  <div class="info-container">
+    <p *ngIf="vacationDaysLeft != 0">Remaining annual leave days: {{ vacationDaysLeft }}. Please create requests for them!</p>
+  </div>
   <div class="panel-container">
     <div class="left-panel">
       <div class="progress-container">

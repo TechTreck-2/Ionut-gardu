@@ -6,10 +6,26 @@ import { VacationEntry } from '../models/vacation-entry.model';
 })
 export class VacationService {
   private storageKey = 'vacationEntries';
+  vacationDaysLeft: number = 21;
+  entries: VacationEntry[] = [];  
 
   getVacationEntries(): VacationEntry[] {
-    const data = localStorage.getItem(this.storageKey);
-    return data ? JSON.parse(data) : [];
+    if (this.isLocalStorageAvailable()) {
+      const data = localStorage.getItem(this.storageKey);
+      return data ? JSON.parse(data) : [];
+    }
+    return [];
+  }
+  
+  private isLocalStorageAvailable(): boolean {
+    try {
+      const testKey = '__test__';
+      localStorage.setItem(testKey, testKey);
+      localStorage.removeItem(testKey);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   saveVacationEntry(entry: VacationEntry): void {
@@ -24,5 +40,19 @@ export class VacationService {
       entries[index].status = 'Approved';
     }
     return entries;
+  }
+
+  updateVacationDaysLeft() {
+    this.entries = this.getVacationEntries();
+    const usedDays = this.entries.reduce(
+      (total, entry) => total + entry.duration,
+      0
+    );
+    this.vacationDaysLeft = 21 - usedDays;
+    
+  }
+
+  getVacationDaysLeft(): number {
+    return this.vacationDaysLeft;
   }
 }

@@ -22,7 +22,6 @@ export class TimerService {
   permissionEntries: PermissionEntry[] = [];
   constructor() {
     this.loadState();
-    this.loadPermissionEntries();
   }
 
   loadPermissionEntries(): void {
@@ -318,7 +317,7 @@ export class TimerService {
 
     const formattedDate = this.formatDate(new Date(date));
     //console.log('Checking for permission entry on formatted date:', formattedDate); // Debugging log
-
+    this.loadPermissionEntries();
     const permissionEntry = this.permissionEntries.find(
       (pe) => pe.date === formattedDate && pe.status === 'Approved'
     );

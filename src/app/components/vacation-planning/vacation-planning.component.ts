@@ -25,7 +25,7 @@ export class VacationPlanningComponent {
     'reason',
     'status',
   ];
-  vacationDaysLeft: number = 21;
+  vacationDaysLeft: number = 21; // Default value, will be updated from service
   vacationService = inject(VacationService);
   dialog = inject(MatDialog);
   snackBar = inject(MatSnackBar);
@@ -34,6 +34,7 @@ export class VacationPlanningComponent {
   ngOnInit(): void {
     this.entries = this.vacationService.getVacationEntries();
     this.updateVacationDaysLeft();
+    
   }
 
   openModal() {
@@ -93,15 +94,14 @@ export class VacationPlanningComponent {
     if (index > -1) {
       this.entries.splice(index, 1);
       localStorage.setItem('vacationEntries', JSON.stringify(this.entries));
+      this.entries = this.vacationService.getVacationEntries();
       this.updateVacationDaysLeft();
+      this.vacationDaysLeft = this.vacationService.getVacationDaysLeft();
     }
   }
 
   updateVacationDaysLeft() {
-    const usedDays = this.entries.reduce(
-      (total, entry) => total + entry.duration,
-      0
-    );
-    this.vacationDaysLeft = 21 - usedDays;
+    this.vacationService.updateVacationDaysLeft();
+    this.vacationDaysLeft = this.vacationService.getVacationDaysLeft();
   }
 }
