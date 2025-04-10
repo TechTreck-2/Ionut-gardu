@@ -108,27 +108,7 @@ export class TimerComponent implements OnInit {
             })
           : '---',
       },
-      {
-        label: 'All for Today',
-        value:
-          clockIn && clockOut
-            ? this.calculateAndFormatHoursWorked(
-                clockIn.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                  hour12: false,
-                }),
-                clockOut.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                  hour12: false,
-                }),
-                this.currentDate
-              )
-            : '---',
-      },
+      { label: 'All for Today', value: this.formattedTime },
       { label: 'Time Left', value: this.timeLeft },
     ];
   }

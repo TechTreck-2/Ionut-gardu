@@ -50,7 +50,7 @@ export class MatTableComponent<T extends { status: string }> implements OnInit {
   @Input() entries: T[] = [];
   @Input() displayedColumns: string[] = [];
   @Input() localStorageKey: string = 'defaultEntries'; // Unique key for each component
-  @Output() entryDeleted = new EventEmitter<void>();
+  @Output() entryDeleted = new EventEmitter<T>();
   startDate: Date | null = null;
   endDate: Date | null = null;
 
@@ -160,10 +160,11 @@ export class MatTableComponent<T extends { status: string }> implements OnInit {
     if (index > -1) {
       this.entries.splice(index, 1);
       this.filteredData.data = [...this.entries];
-      this.entryDeleted.emit();
+      this.entryDeleted.emit(entry);
     }
 
     localStorage.setItem(this.localStorageKey, JSON.stringify(this.entries));
+    console.log('Entries after deletion:', this.entries);
   }
 
   approveEntry(entry: T): void {

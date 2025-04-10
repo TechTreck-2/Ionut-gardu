@@ -34,7 +34,11 @@ export class VacationPlanningComponent {
   ngOnInit(): void {
     this.entries = this.vacationService.getVacationEntries();
     this.updateVacationDaysLeft();
-    
+  }
+
+  ngOnChanges(): void {
+    this.entries = this.vacationService.getVacationEntries();
+    this.updateVacationDaysLeft();
   }
 
   openModal() {
@@ -88,18 +92,7 @@ export class VacationPlanningComponent {
     this.entries = this.vacationService.getVacationEntries();
     this.updateVacationDaysLeft();
   }
-
-  deleteEntry(entry: VacationEntry) {
-    const index = this.entries.findIndex((e) => e === entry);
-    if (index > -1) {
-      this.entries.splice(index, 1);
-      localStorage.setItem('vacationEntries', JSON.stringify(this.entries));
-      this.entries = this.vacationService.getVacationEntries();
-      this.updateVacationDaysLeft();
-      this.vacationDaysLeft = this.vacationService.getVacationDaysLeft();
-    }
-  }
-
+  
   updateVacationDaysLeft() {
     this.vacationService.updateVacationDaysLeft();
     this.vacationDaysLeft = this.vacationService.getVacationDaysLeft();
