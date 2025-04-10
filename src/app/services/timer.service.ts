@@ -3,7 +3,8 @@ import { BehaviorSubject, interval, Subscription } from 'rxjs';
 import { VacationService } from './vacation.service';
 import { VacationEntry } from '../models/vacation-entry.model';
 import { TimeEntry } from '../models/time-entry.model';
-
+import { PermissionLeaveService } from './permission-leave.service';
+import { PermissionEntry } from '../models/permission-entry.model';
 @Injectable({
   providedIn: 'root',
 })
@@ -17,8 +18,16 @@ export class TimerService {
   vacationEntries: VacationEntry[] = [];
   timeEntries: TimeEntry[] = [];
   vacationService = inject(VacationService);
+  permissionLeaveService = inject(PermissionLeaveService);
+  permissionEntries: PermissionEntry[] = [];
   constructor() {
     this.loadState();
+    this.loadPermissionEntries();
+  }
+
+  loadPermissionEntries(): void {
+    this.permissionEntries = this.permissionLeaveService.getPermissionEntries();
+    //console.log('Permission entries loaded.', this.permissionEntries); // Debugging log
   }
 
   get runningStatus() {
@@ -279,5 +288,62 @@ export class TimerService {
       });
     }
     return false;
+  }
+
+  calculateHoursWorked(
+    clockIn: string,
+    clockOut: string,
+    date: string
+  ): number {
+    //console.log(clockIn, clockOut, date); // Debugging log
+    const clockInParts = clockIn.split(':').map(Number);
+    const clockOutParts = clockOut.split(':').map(Number);
+
+    if (clockInParts.length !== 3 || clockOutParts.length !== 3) {
+      console.error('Invalid time format. Expected HH:mm:ss');
+      return 0;
+    }
+
+    const [inHours, inMinutes, inSeconds] = clockInParts;
+    const [outHours, outMinutes, outSeconds] = clockOutParts;
+
+    const inDate = new Date();
+    const outDate = new Date();
+
+    inDate.setHours(inHours, inMinutes, inSeconds, 0);
+    outDate.setHours(outHours, outMinutes, outSeconds, 0);
+
+    const diffInMilliseconds = outDate.getTime() - inDate.getTime();
+    let diffInHours = diffInMilliseconds / 1000 / 3600;
+
+    const formattedDate = this.formatDate(new Date(date));
+    //console.log('Checking for permission entry on formatted date:', formattedDate); // Debugging log
+
+    const permissionEntry = this.permissionEntries.find(
+      (pe) => pe.date === formattedDate && pe.status === 'Approved'
+    );
+    //console.log('Permission entry:', permissionEntry); // Debugging log
+
+    if (permissionEntry) {
+      const permissionDuration =
+        this.permissionLeaveService.calculateDuration(permissionEntry);
+      const [permHours, permMinutes, permSeconds] = permissionDuration
+        .split(':')
+        .map(Number);
+      const permDurationInHours =
+        permHours + permMinutes / 60 + permSeconds / 3600;
+      //console.log('Permission duration in hours:', permDurationInHours); // Debugging log
+
+      diffInHours -= permDurationInHours;
+    }
+    //console.log('Calculated hours worked:', diffInHours); // Debugging log
+    return Math.max(0, diffInHours);
+  }
+
+  private formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

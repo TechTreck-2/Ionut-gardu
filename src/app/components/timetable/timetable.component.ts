@@ -310,48 +310,11 @@ export class TimeTrackingComponent implements OnInit {
     clockOut: string,
     date: string
   ): number {
-    const clockInParts = clockIn.split(':').map(Number);
-    const clockOutParts = clockOut.split(':').map(Number);
-
-    if (clockInParts.length !== 3 || clockOutParts.length !== 3) {
-      console.error('Invalid time format. Expected HH:mm:ss');
-      return 0;
-    }
-
-    const [inHours, inMinutes, inSeconds] = clockInParts;
-    const [outHours, outMinutes, outSeconds] = clockOutParts;
-
-    const inDate = new Date();
-    const outDate = new Date();
-
-    inDate.setHours(inHours, inMinutes, inSeconds, 0);
-    outDate.setHours(outHours, outMinutes, outSeconds, 0);
-
-    const diffInMilliseconds = outDate.getTime() - inDate.getTime();
-    let diffInHours = diffInMilliseconds / 1000 / 3600;
-
-    const formattedDate = this.formatDate(new Date(date));
-    //console.log('Checking for permission entry on formatted date:', formattedDate);
-
-    const permissionEntry = this.permissionEntries.find(
-      (pe) => pe.date === formattedDate && pe.status === 'Approved'
+    return this.timerService.calculateHoursWorked(
+      clockIn,
+      clockOut,
+      date
     );
-    //console.log('Permission entry:', permissionEntry); // Debugging log
-
-    if (permissionEntry) {
-      const permissionDuration =
-        this.permissionLeaveService.calculateDuration(permissionEntry);
-      const [permHours, permMinutes, permSeconds] = permissionDuration
-        .split(':')
-        .map(Number);
-      const permDurationInHours =
-        permHours + permMinutes / 60 + permSeconds / 3600;
-      //console.log('Permission duration in hours:', permDurationInHours); // Debugging log
-
-      diffInHours -= permDurationInHours;
-    }
-
-    return Math.max(0, diffInHours);
   }
 
   computeStatus(entry: TimeEntry): string {

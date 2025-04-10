@@ -72,37 +72,57 @@ export class TimerComponent implements OnInit {
   }
 
   private updateDataSource() {
+    const clockIn = this.timerService.getFirstClockIn();
+    const clockOut = this.timerService.getClockOutTime();
+    const date = new Date(); // Assuming you want to use the current date
+  
     this.dataSource = [
       { label: 'Current Date', value: this.currentDate },
       {
         label: 'First Clock In',
-        value: this.timerService.getFirstClockIn()
-          ? this.timerService
-              .getFirstClockIn()!
-              .toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-              })
+        value: clockIn
+          ? clockIn.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false,
+            })
           : '---',
       },
       {
         label: 'Clock Out',
-        value: this.timerService.getClockOutTime()
-          ? this.timerService
-              .getClockOutTime()!
-              .toLocaleTimeString([], {
+        value: clockOut
+          ? clockOut.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false,
+            })
+          : '---',
+      },
+      {
+        label: 'All for Today',
+        value: clockIn && clockOut
+          ? this.calculateAndFormatHoursWorked(
+              clockIn.toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
                 hour12: false,
-              })
+              }),
+              clockOut.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+              }),
+              this.currentDate
+            )
           : '---',
       },
-      { label: 'All for Today', value: this.formattedTime },
       { label: 'Time Left', value: this.timeLeft },
     ];
+   
   }
 
   get workPercentage(): number {
@@ -143,4 +163,19 @@ export class TimerComponent implements OnInit {
     this.isVacation = this.timerService.isVacationDay(new Date());
     
   }
+
+  calculateAndFormatHoursWorked(clockIn: string, clockOut: string, date: string): string {
+    const hoursWorked = this.timerService.calculateHoursWorked(clockIn, clockOut, date);
+    return this.formatHoursToHHMMSS(hoursWorked);
+  }
+
+  
+  private formatHoursToHHMMSS(totalHours: number): string {
+    const totalSeconds = totalHours * 3600; // Convert hours to seconds
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    return `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
+}
+
 }
