@@ -183,7 +183,7 @@ html {
 
     html {
         --mat-sys-dragged-state-layer-opacity: 0.16;
-        --mat-sys-focus-state-layer-opacity: 0.12;
-        --mat-sys-hover-state-layer-opacity: 0.08;
-        --mat-sys-pressed-state-layer-opacity: 0.12;
+        --mat-sys-focus-state-layer-opacity: 0.;
+        --mat-sys-hover-state-layer-opacity: 0.0;
+        --mat-sys-pressed-state-layer-opacity: 0.0;
     }

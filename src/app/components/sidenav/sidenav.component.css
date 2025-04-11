@@ -2,6 +2,9 @@
     background: var(--mat-sys-primary-container);
     color: var(--mat-sys-primary);
     font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif!important;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
   }
 
 .toolbar h1 {
@@ -10,8 +13,27 @@
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif!important;
 }
 
+.toolbar-spacer{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: start;
+}
+
 .button {
   color: var(--mat-sys-primary-fixed-dim);
+}
+
+.theme-button{
+  color: var(--mat-sys-primary);
+  background: var(--mat-sys-primary-container);
+  border-radius: 5px;
+  padding: 5px;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif!important;
+}
+
+::ng-deep.mdc-label {
+  color: var(--mat-sys-primary-fixed-dim)!important;
 }
 
 .sidenav-container {
@@ -43,7 +65,9 @@
   }
   
   .selected-text {
-    color: var(--mat-sys-primary); 
+    color: var(--mat-sys-primary);
+    border-left: 5px;
+    border-color: var(--mat-sys-primary); 
   }
 
   .sidenav-text{
@@ -62,12 +86,10 @@
   }
 
   ::ng-deep.mat-mdc-nav-list:hover ::ng-deep.mat-mdc-list-item:hover {
-    background-color: var(--mat-sys-background)!important;
-    color: var(--mat-sys-primary)!important;
     --mat-list-active-indicator-color: var(--mat-sys-primary);
     --mat-lst-hover-indicator-color: var(--mat-sys-primary)!important;
     border-radius: var(--mat-list-active-indicator-shape, 0); 
-    --mat-focus-indicator-border-radius: var(--mat-list-active-indicator-shape, var(--mat-sys-corner-full));
+    
 
   }
 
@@ -76,16 +98,25 @@
   }
 
   mat-icon {
-    padding-right: 5px;
+    padding-right: 10px;
     font-size: 25px;
   }
 
   .content-margin {
     margin-left: 250px!important;
-    /*transition: margin-left 0.3s ease;*/
+    transition:  0.3s ease-in-out;
   }
 
   .content-no-margin {
     margin-left: 60px!important;
-    /*transition: margin-left 0.3s ease; */
+    transition:  0.3s ease-in-out; 
   }
+
+  
+  
+  ::ng-deep a[mat-list-item]:hover mat-icon,
+  ::ng-deep a[mat-list-item]:hover span {
+    color: var(--mat-sys-primary) !important; 
+  }
+  
+  
