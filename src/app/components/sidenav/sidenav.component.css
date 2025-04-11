@@ -26,6 +26,16 @@
     width: 250px;
     font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif!important;
   }
+  
+  .sidenav-collapsed {
+    width: 60px; /* or any other width you prefer for the collapsed state */
+    transition: margin-left 0.3s ease;
+  }
+
+  .sidenav-expanded {
+    width: 250px; /* or any other width you prefer for the expanded state */
+    transition: margin-left 0.3s ease;
+  }
 
   .custom-sidenav {
     border-radius: 0;
@@ -40,3 +50,42 @@
     color: var(--mat-sys-on-surface)!important;
   }
 
+  ::ng-deep.mdc-list-item__primary-text{
+    display: flex!important;
+    align-items: center!important;
+    justify-content: start!important;
+  }
+
+  ::ng-deep.mdc-list-item__primary-text:hover{
+   
+    color: var(--mat-sys-primary)!important;
+  }
+
+  ::ng-deep.mat-mdc-nav-list:hover ::ng-deep.mat-mdc-list-item:hover {
+    background-color: var(--mat-sys-background)!important;
+    color: var(--mat-sys-primary)!important;
+    --mat-list-active-indicator-color: var(--mat-sys-primary);
+    --mat-lst-hover-indicator-color: var(--mat-sys-primary)!important;
+    border-radius: var(--mat-list-active-indicator-shape, 0); 
+    --mat-focus-indicator-border-radius: var(--mat-list-active-indicator-shape, var(--mat-sys-corner-full));
+
+  }
+
+  ::ng-deep.mdc-list {
+    padding: 0!important;
+  }
+
+  mat-icon {
+    padding-right: 5px;
+    font-size: 25px;
+  }
+
+  .content-margin {
+    margin-left: 250px!important;
+    /*transition: margin-left 0.3s ease;*/
+  }
+
+  .content-no-margin {
+    margin-left: 60px!important;
+    /*transition: margin-left 0.3s ease; */
+  }
