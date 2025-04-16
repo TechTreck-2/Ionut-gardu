@@ -13,6 +13,8 @@ import { StyleManagerService } from '../../services/style-manager.service';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
+import { HomeOfficeLocationComponent } from '../home-office-location/home-office-location.component';
+import { HomeOfficeRequestComponent } from '../home-office-request/home-office-request.component';
 
 @Component({
   selector: 'app-sidenav',
@@ -29,7 +31,9 @@ import { DomSanitizer } from '@angular/platform-browser';
     VacationPlanningComponent,
     PermissionLeaveComponent,
     MatSlideToggleModule,
-    FormsModule
+    FormsModule,
+    HomeOfficeLocationComponent,
+    HomeOfficeRequestComponent
   ],
   templateUrl: './sidenav.component.html',
   styleUrls: ['./sidenav.component.css']
@@ -39,10 +43,13 @@ export class SidenavComponent {
   selectedComponent = 'dashboard';
   isExpanded = false;
   isChecked = false;
+  
+
 
   constructor(private matIconRegistry: MatIconRegistry, private domSanitizer: DomSanitizer) {
     // Set the default font set class to Material Symbols
     this.matIconRegistry.setDefaultFontSetClass('material-symbols-outlined');
+    
   }
 
   selectComponent(component: string) {

@@ -24,6 +24,10 @@
   color: var(--mat-sys-primary-fixed-dim);
 }
 
+::ng-deep .mat-toolbar-single-row {
+  padding: 0 8px!important;
+}
+
 .theme-button{
   color: var(--mat-sys-primary);
   background: var(--mat-sys-primary-container);

@@ -95,6 +95,42 @@
           >Permission leave</span
         >
       </a>
+
+      <a mat-list-item (click)="selectComponent('home-office-location')">
+        <mat-icon
+          [ngClass]="{
+            'selected-text': selectedComponent === 'home-office-location',
+            'sidenav-text': selectedComponent !== 'home-office-location'
+          }"
+          >home_pin</mat-icon
+        >
+        <span
+          *ngIf="isExpanded"
+          [ngClass]="{
+            'selected-text': selectedComponent === 'home-office-location',
+            'sidenav-text': selectedComponent !== 'home-office-location'
+          }"
+          >Home Office Location</span
+        >
+      </a>
+
+      <a mat-list-item (click)="selectComponent('home-office-request')">
+        <mat-icon
+          [ngClass]="{
+            'selected-text': selectedComponent === 'home-office-request',
+            'sidenav-text': selectedComponent !== 'home-office-request'
+          }"
+          >home</mat-icon
+        >
+        <span
+          *ngIf="isExpanded"
+          [ngClass]="{
+            'selected-text': selectedComponent === 'home-office-request',
+            'sidenav-text': selectedComponent !== 'home-office-request'
+          }"
+          >Home Office Request</span
+        >
+      </a>
     </mat-nav-list>
   </mat-sidenav>
 
@@ -115,6 +151,12 @@
     </div>
     <div *ngIf="selectedComponent === 'permission-leave'">
       <app-permission-leave></app-permission-leave>
+    </div>
+    <div *ngIf="selectedComponent === 'home-office-location'">
+      <app-home-office-location></app-home-office-location>
+    </div>
+    <div *ngIf="selectedComponent === 'home-office-request'">
+      <app-home-office-request></app-home-office-request>
     </div>
   </mat-sidenav-content>
 </mat-sidenav-container>

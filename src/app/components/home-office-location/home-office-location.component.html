@@ -1,0 +1,46 @@
+<div class="container">
+  <h1>Home Office Location</h1>
+  <div class="shadow-container">
+    <div class="controls">
+      <input [(ngModel)]="address" placeholder="Enter address" />
+      <button 
+      mat-raised-button
+      color="primary"
+      (click)="searchAddress()">Search</button>
+      <button *ngIf="searchedAddress" 
+      mat-raised-button
+      color="primary"
+      (click)="addLocation()">
+        Add Location
+      </button>
+    </div>
+    <div class="content">
+      <div class="map-container">
+        <p>Map</p>
+        <google-map
+          [center]="center"
+          [zoom]="zoom"
+          (mapClick)="mapClick($event)"
+          #myGoogleMap
+          id="map"
+          [width]="'100%'"
+        >
+          <map-marker
+            *ngIf="markerPosition"
+            [position]="markerPosition"
+          ></map-marker>
+        </google-map>
+      </div>
+      <div class="added-locations">
+        <p>Added Locations</p>
+        <div *ngIf="addedLocations.length === 0">No locations saved yet</div>
+        <div class="location-item" *ngFor="let location of addedLocations; let i = index">
+          <div class="location-info">
+            <div class="address">{{ location.address }}</div>
+          </div>
+          <button class="delete-btn" (click)="deleteLocation(i)">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

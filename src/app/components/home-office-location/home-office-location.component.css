@@ -1,0 +1,48 @@
+.container {
+  padding: 20px;
+}
+
+.shadow-container {
+  margin-top: 10px;
+  box-shadow: 0 1px 22px #0000001a;
+  border-radius: 5px;
+  padding: 20px;
+  width: auto;
+}
+
+.content {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.controls{
+  padding: 0 10px;
+  width: 100%;
+
+  input {
+    width: 80%;
+    height: 35px;
+  }
+}
+
+.map-container {
+  width: 70% !important;
+  height: 100% !important;
+  padding: 0 10px;
+}
+
+.added-locations {
+  padding: 0 10px;
+  width: 30%;
+}
+
+.location-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
