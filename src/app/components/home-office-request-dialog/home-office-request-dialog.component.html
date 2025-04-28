@@ -19,6 +19,7 @@
         matInput
         [matDatepicker]="startPicker"
         formControlName="startDate"
+        [matDatepickerFilter]="dateFilter"
       />
       <mat-datepicker-toggle
         matSuffix
@@ -29,7 +30,7 @@
 
     <mat-form-field appearance="fill" style="width: 100%">
       <mat-label>End Date</mat-label>
-      <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
+      <input matInput [matDatepicker]="endPicker" formControlName="endDate" [matDatepickerFilter]="dateFilter" />
       <mat-datepicker-toggle
         matSuffix
         [for]="endPicker"
