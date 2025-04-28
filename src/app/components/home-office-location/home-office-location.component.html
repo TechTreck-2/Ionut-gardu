@@ -38,7 +38,9 @@
           <div class="location-info">
             <div class="address">{{ location.address }}</div>
           </div>
-          <button class="delete-btn" (click)="deleteLocation(i)">Delete</button>
+          <button class="delete-btn" (click)="deleteLocation(i)"
+          mat-raised-button
+      color="primary">Delete</button>
         </div>
       </div>
     </div>

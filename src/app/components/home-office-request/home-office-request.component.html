@@ -1,5 +1,21 @@
 <div class="container">
-    <h1>Home Office Request</h1>
-    
-    
+  <h1>Home Office Requests</h1>
+  <div class="info-container">
+    <p>If you are working from home, create a home offce request from here.</p>
   </div>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="openModal()"
+  >
+    + Add Home Office Location
+  </button>
+
+  <div class="shadow-container">
+    <app-mat-table
+      [entries]="entries"
+      [localStorageKey]="'homeOfficeEntries'"
+      [displayedColumns]="displayedColumns"
+    ></app-mat-table>
+  </div>
+</div>
