@@ -98,3 +98,43 @@ button {
   margin: 5px;
   color: var(--mat-sys-on-surface);
 }
+
+@media screen and (max-width: 768px) {
+  .panel-container{
+    flex-direction: column;
+    align-items: center;
+  } 
+
+  .timetable {
+    width: 90%;
+  }
+
+  .info-container {
+    padding: 8px;
+  }
+
+  button {
+    width: 80%;
+    margin: 5px 0;
+  }
+
+  .button-container {
+    flex-direction: column;
+  }
+}
+
+
+@media screen and (max-width: 480px) {
+  .progress-label {
+    font-size: 18px;
+  }
+
+  .timer-container {
+    padding: 10px;
+    margin-top: 10px;
+  }
+
+  .info-container p {
+    font-size: 14px;
+  }
+}
