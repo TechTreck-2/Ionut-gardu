@@ -1,7 +1,10 @@
 <main class="main">
   <div class="content">
-    <app-sidenav></app-sidenav>
+    <ng-container *ngIf="authService.isAuthenticated(); else authContent">
+      <app-sidenav></app-sidenav>
+    </ng-container>
+    <ng-template #authContent>
+      <router-outlet></router-outlet>
+    </ng-template>
   </div>
 </main>
-
-<router-outlet />

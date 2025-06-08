@@ -1,0 +1,21 @@
+.main {
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--mat-sys-background);
+}
+
+.content {
+  height: 100%;
+  width: 100%;
+}
+
+/* Styles for authentication pages */
+:host-context(router-outlet + *) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: var(--mat-sys-background);
+}
