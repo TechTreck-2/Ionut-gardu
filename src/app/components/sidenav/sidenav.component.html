@@ -131,6 +131,13 @@
           >Home Office Request</span
         >
       </a>
+
+      <div class="logout-container">
+        <a mat-list-item (click)="logout()" class="logout-button">
+          <mat-icon class="sidenav-text">logout</mat-icon>
+          <span *ngIf="isExpanded" class="sidenav-text">Logout</span>
+        </a>
+      </div>
     </mat-nav-list>
   </mat-sidenav>
 
