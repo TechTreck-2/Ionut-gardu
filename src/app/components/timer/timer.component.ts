@@ -58,28 +58,19 @@ export class TimerComponent implements OnInit {
   private async loadTimeEntries(): Promise<void> {
     try {
       const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
-      //console.log('Looking for entries with date:', today);
       
       const entries = await firstValueFrom(this.timeEntryService.getTimeEntries());
-      //console.log('Raw entries data:', entries);
       
       // Initialize with default values
       this.firstClockInDisplay = '---';
       this.clockOutTimeDisplay = '---';
       this.time = 0;
       
-      // Filter entries for today and log each comparison
-      const todayEntries = entries.filter(entry => {
-        //console.log('Raw entry data:', entry);
-        
-        return entry.date === today;
-      });
-      //console.log('Today entries:', todayEntries);
+      // Filter entries for today
+      const todayEntries = entries.filter(entry => entry.date === today);
       
       if (todayEntries.length > 0) {
         const entry = todayEntries[0];
-        //console.log('Using entry:', entry);
-        
         this.firstClockInDisplay = entry.clockInTime || '---';
         this.clockOutTimeDisplay = entry.clockOutTime || '---';
         
@@ -92,7 +83,17 @@ export class TimerComponent implements OnInit {
           this.time = this.timeStringToSeconds(hoursWorked);
         }
       } else {
-        console.log('No entries found for today');
+        // Create a new entry for today if none exists
+        try {
+          await firstValueFrom(this.timeEntryService.createTimeEntry({
+            date: today,
+            clockInTime: '---',
+            clockOutTime: '---'
+          }));
+          console.log('Created new time entry for today');
+        } catch (error) {
+          console.error('Error creating time entry for today:', error);
+        }
       }
 
       // Always update dataSource, whether we found entries or not

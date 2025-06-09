@@ -236,6 +236,10 @@ export class TimerService {
     clockOut: string,
     date: string
   ): number {
+    if (clockIn === '---' || clockOut === '---') {
+      return 0;
+    }
+
     const clockInParts = clockIn.split(':').map(Number);
     const clockOutParts = clockOut.split(':').map(Number);
 

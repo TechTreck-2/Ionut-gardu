@@ -103,6 +103,13 @@ export class TimeEntryService {
     return this.http.get<StrapiResponse<any>>(`${this.apiUrl}?populate=*`).pipe(
       //tap(response => console.log('Time Entry Service - Raw response:', JSON.stringify(response, null, 2))),
       map(response => this.mapStrapiResponse(response)),
+      switchMap(entries => {
+        return this.getUserId().pipe(
+          map(userId => entries.filter(entry => 
+            entry.users_permissions_user?.id === userId
+          ))
+        );
+      }),
       catchError(error => {
         console.error('Time Entry Service - Error in getTimeEntries:', error);
         return this.handleError(error);
