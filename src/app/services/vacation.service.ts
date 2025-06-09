@@ -34,6 +34,18 @@ export class VacationService {
     localStorage.setItem(this.storageKey, JSON.stringify(entries));
   }
 
+  deleteVacationEntry(entry: VacationEntry): void {
+    const entries = this.getVacationEntries();
+    const index = entries.findIndex(e => 
+      e.startDate === entry.startDate && 
+      e.endDate === entry.endDate
+    );
+    if (index > -1) {
+      entries.splice(index, 1);
+      localStorage.setItem(this.storageKey, JSON.stringify(entries));
+    }
+  }
+
   approveEntry(entries: VacationEntry[], entryToApprove: VacationEntry): VacationEntry[] {
     const index = entries.findIndex(e => e === entryToApprove);
     if (index > -1) {
@@ -54,5 +66,24 @@ export class VacationService {
 
   getVacationDaysLeft(): number {
     return this.vacationDaysLeft;
+  }
+
+  isVacationDay(date: Date): boolean {
+    const vacationEntries = this.getVacationEntries();
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+
+    return vacationEntries.some((vacation) => {
+      const vacationStart = new Date(vacation.startDate);
+      const vacationEnd = new Date(vacation.endDate);
+      vacationStart.setHours(0, 0, 0, 0);
+      vacationEnd.setHours(0, 0, 0, 0);
+
+      return (
+        vacation.status === 'Approved' &&
+        targetDate >= vacationStart &&
+        targetDate <= vacationEnd
+      );
+    });
   }
 }

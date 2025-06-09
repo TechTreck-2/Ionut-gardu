@@ -18,18 +18,15 @@ import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { EditTimeDialogComponent } from '../edit-time-dialog/edit-time-dialog.component';
 import { TimerService } from '../../services/timer.service';
+import { TimeEntryService } from '../../services/time-entry.service';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
 import { PermissionLeaveService } from '../../services/permission-leave.service';
 import { PermissionEntry } from '../../models/permission-entry.model';
-interface TimeEntry {
-  date: string;
-  hoursWorked: number;
-  clockInTime?: string;
-  clockOutTime?: string;
-}
+import { TimeEntry } from '../../models/time-entry.model';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-time-table',
@@ -71,56 +68,88 @@ export class TimeTrackingComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   timerService = inject(TimerService);
+  timeEntryService = inject(TimeEntryService);
   permissionLeaveService = inject(PermissionLeaveService);
   snackBar = inject(MatSnackBar);
   dialog = inject(MatDialog);
   
   ngOnInit(): void {
-    this.loadFromLocalStorage();
+    this.loadInitialData();
     this.loadPermissionEntries();
     const date = new Date();
     this.startDate = new Date(date);
     this.endDate = new Date(date);
 
+    // Subscribe to timer updates without making API calls on each tick
     this.timerService.time$.subscribe((time) => {
-      const today = new Date().toDateString();
+      const today = new Date().toISOString().split('T')[0];
 
-      this.filterEntriesByDate();
+      const clockInTime = this.timerService.getFirstClockIn()?.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+      const clockOutTime = this.timerService.getClockOutTime()?.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
 
-      const clockInTime = this.timerService
-        .getFirstClockIn()
-        ?.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        });
-      const clockOutTime = this.timerService
-        .getClockOutTime()
-        ?.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        });
-
-      const entry: TimeEntry = {
-        date: today,
-        hoursWorked: time / 3600, // Convert seconds to hours
-        clockInTime: clockInTime || '---',
-        clockOutTime: clockOutTime || '---',
-      };
-
-      const existingEntryIndex = this.dataSource.data.findIndex(
-        (e) => e.date === today
-      );
+      // Update local data source without making API calls
+      const currentData = [...this.dataSource.data];
+      const existingEntryIndex = currentData.findIndex(e => e.date === today);
+      
       if (existingEntryIndex > -1) {
-        this.dataSource.data[existingEntryIndex] = entry;
+        currentData[existingEntryIndex] = {
+          ...currentData[existingEntryIndex],
+          clockInTime: clockInTime || '---',
+          clockOutTime: clockOutTime || '---'
+        };
       } else {
-        this.dataSource.data.push(entry);
-        this.saveToLocalStorage();
+        currentData.push({
+          date: today,
+          clockInTime: clockInTime || '---',
+          clockOutTime: clockOutTime || '---'
+        });
       }
+      
+      this.dataSource.data = currentData;
+      this.filterEntriesByDate();
     });
+  }
+
+  async saveToStrapi(entry: TimeEntry) {
+    try {
+      if (entry.documentId) {
+        await firstValueFrom(this.timeEntryService.updateTimeEntry(entry.documentId, entry));
+      } else {
+        const newEntry = await firstValueFrom(this.timeEntryService.createTimeEntry(entry));
+        // Update local entry with the new documentId
+        const index = this.dataSource.data.findIndex(e => e.date === entry.date);
+        if (index > -1) {
+          const updatedData = [...this.dataSource.data];
+          updatedData[index] = { ...newEntry };
+          this.dataSource.data = updatedData;
+        }
+      }
+    } catch (error) {
+      console.error('Error saving to Strapi:', error);
+      throw error;
+    }
+  }
+
+  // Load initial data from Strapi only once
+  private async loadInitialData() {
+    try {
+      const entries = await firstValueFrom(this.timeEntryService.getTimeEntries());
+      this.dataSource.data = entries;
+      this.filterEntriesByDate();
+    } catch (error) {
+      console.error('Error loading time entries:', error);
+      this.snackBar.open('Error loading time entries', 'Close', { duration: 3000 });
+    }
   }
 
   ngAfterViewInit(): void {
@@ -193,16 +222,16 @@ export class TimeTrackingComponent implements OnInit {
 
       this.filteredData = new MatTableDataSource(filteredEntries);
 
-      this.filteredData.sortingDataAccessor = (item, property) => {
+      this.filteredData.sortingDataAccessor = (item: TimeEntry, property: string) => {
         switch (property) {
           case 'date':
             return new Date(item.date).getTime();
           case 'hoursWorked':
-            return item.hoursWorked;
+            return this.getHoursWorked(item);
           case 'clockInTime':
-            return item.clockInTime ? item.clockInTime : '';
+            return item.clockInTime || '';
           case 'clockOutTime':
-            return item.clockOutTime ? item.clockOutTime : '';
+            return item.clockOutTime || '';
           case 'permissionLeaveDuration':
             return this.getPermissionLeaveDurationInSeconds(item);
           case 'status':
@@ -215,21 +244,14 @@ export class TimeTrackingComponent implements OnInit {
       this.filteredData.paginator = this.paginator;
       this.filteredData.sort = this.sort;
     } else {
-      this.loadFromLocalStorage();
+      // If no date range is selected, show all entries
+      this.filteredData = new MatTableDataSource(currentData);
+      this.filteredData.paginator = this.paginator;
+      this.filteredData.sort = this.sort;
     }
   }
 
-  private getPermissionLeaveDurationInSeconds(item: TimeEntry): number {
-    const durationString = this.calculatePermissionLeaveDuration(item);
-    if (durationString === '---') {
-      return 0;
-    }
-
-    const [hours, minutes, seconds] = durationString.split(':').map(Number);
-    return hours * 3600 + minutes * 60 + seconds;
-  }
-
-  editEntry(entry: TimeEntry) {
+  async editEntry(entry: TimeEntry) {
     const dialogRef = this.dialog.open(EditTimeDialogComponent, {
       data: {
         clockInTime: entry.clockInTime,
@@ -237,34 +259,40 @@ export class TimeTrackingComponent implements OnInit {
       },
     });
 
-    dialogRef.afterClosed().subscribe((result) => {
+    dialogRef.afterClosed().subscribe(async (result) => {
       if (
         result &&
         this.validateTimeFormat(result.clockInTime) &&
         this.validateTimeFormat(result.clockOutTime)
       ) {
-        entry.clockInTime = result.clockInTime;
-        entry.clockOutTime = result.clockOutTime;
-        entry.hoursWorked = this.calculateHoursWorked(
-          result.clockInTime,
-          result.clockOutTime,
-          entry.date
-        );
+        try {
+          const updatedEntry = {
+            ...entry,
+            clockInTime: result.clockInTime,
+            clockOutTime: result.clockOutTime,
+          };
 
-        const originalEntryIndex = this.dataSource.data.findIndex(
-          (e) => e.date === entry.date
-        );
-        if (originalEntryIndex > -1) {
-          this.dataSource.data[originalEntryIndex] = entry;
+          // Update local state immediately
+          const currentData = [...this.dataSource.data];
+          const index = currentData.findIndex(e => e.date === entry.date);
+          if (index > -1) {
+            currentData[index] = updatedEntry;
+            this.dataSource.data = currentData;
+            this.filterEntriesByDate();
+          }
+
+          // Then save to Strapi
+          await this.saveToStrapi(updatedEntry);
+          this.timerService.loadState();
+          
+          this.snackBar.open('Entry updated successfully!', 'Close', {
+            duration: 2000,
+          });
+        } catch (error) {
+          console.error('Error updating entry:', error);
+          this.snackBar.open('Failed to update entry', 'Close', { duration: 3000 });
         }
-
-        this.saveToLocalStorage();
-        this.timerService.loadState();
-
-        this.snackBar.open('Entry updated successfully!', 'Close', {
-          duration: 2000,
-        });
-      } else {
+      } else if (result) {
         this.snackBar.open(
           'Invalid time format. Please use HH:mm:ss.',
           'Close',
@@ -274,53 +302,117 @@ export class TimeTrackingComponent implements OnInit {
     });
   }
 
-  deleteEntry(entry: TimeEntry) {
-    this.timerService.deleteTimeEntry(entry.date);
-    this.snackBar.open('Entry deleted successfully!', 'Close', {
-      duration: 2000,
-    });
-    this.loadFromLocalStorage();
-  }
-
-  private saveToLocalStorage() {
-    const dataToSave = this.dataSource.data.map((entry) => ({
-      date: entry.date,
-      hoursWorked: entry.hoursWorked,
-      clockInTime: entry.clockInTime,
-      clockOutTime: entry.clockOutTime,
-    }));
-    localStorage.setItem('timeEntries', JSON.stringify(dataToSave));
-    //console.log('Data saved to local storage.', dataToSave); // Debugging log
-  }
-
-  private loadFromLocalStorage() {
-    const savedData = localStorage.getItem('timeEntries');
-    if (savedData) {
-      const parsedData: TimeEntry[] = JSON.parse(savedData);
-      this.dataSource.data = parsedData;
-      //console.log('Data loaded from local storage.', parsedData); // Debugging log
-    } else {
-      this.dataSource.data = [];
-      console.log('No data found in local storage.'); // Debugging log
+  calculateHoursWorked(clockIn: string, clockOut: string, date: string): number {
+    if (clockIn === '---' || clockOut === '---') {
+      return 0;
     }
-  }
+    
+    const clockInParts = clockIn.split(':').map(Number);
+    const clockOutParts = clockOut.split(':').map(Number);
 
-  calculateHoursWorked(
-    clockIn: string,
-    clockOut: string,
-    date: string
-  ): number {
-    return this.timerService.calculateHoursWorked(
-      clockIn,
-      clockOut,
-      date
+    if (clockInParts.length !== 3 || clockOutParts.length !== 3) {
+      console.error('Invalid time format. Expected HH:mm:ss');
+      return 0;
+    }
+
+    const [inHours, inMinutes, inSeconds] = clockInParts;
+    const [outHours, outMinutes, outSeconds] = clockOutParts;
+
+    const inDate = new Date();
+    const outDate = new Date();
+
+    inDate.setHours(inHours, inMinutes, inSeconds, 0);
+    outDate.setHours(outHours, outMinutes, outSeconds, 0);
+
+    const diffInMilliseconds = outDate.getTime() - inDate.getTime();
+    let diffInHours = diffInMilliseconds / 1000 / 3600;
+
+    const formattedDate = this.formatDate(new Date(date));
+    this.loadPermissionEntries();
+    const permissionEntry = this.permissionEntries.find(
+      (pe) => pe.date === formattedDate && pe.status === 'Approved'
+    );
+
+    if (permissionEntry) {
+      const permissionDuration = this.permissionLeaveService.calculateDuration(permissionEntry);
+      const [permHours, permMinutes, permSeconds] = permissionDuration.split(':').map(Number);
+      const permDurationInHours = permHours + permMinutes / 60 + permSeconds / 3600;
+      diffInHours -= permDurationInHours;
+    }
+
+    return Math.max(0, diffInHours);
+  }
+  getHoursWorked(entry: TimeEntry): number {
+    if (!entry || !entry.clockInTime || !entry.clockOutTime || !entry.date) {
+      return 0;
+    }
+    return this.calculateHoursWorked(
+      entry.clockInTime || '---',
+      entry.clockOutTime || '---',
+      entry.date
     );
   }
 
+  private getPermissionLeaveDurationInSeconds(entry: TimeEntry): number {
+    const durationString = this.calculatePermissionLeaveDuration(entry);
+    if (durationString === '---') {
+      return 0;
+    }
+
+    const [hours, minutes, seconds] = durationString.split(':').map(Number);
+    return hours * 3600 + minutes * 60 + seconds;
+  }
+
+  private async updateEntry(entry: TimeEntry, updates: Partial<TimeEntry>) {
+    if (!entry.documentId) {
+      this.snackBar.open('Cannot update entry: missing documentId', 'Close', {
+        duration: 3000,
+      });
+      return;
+    }
+    
+    await firstValueFrom(this.timeEntryService.updateTimeEntry(entry.documentId, {
+      ...entry,
+      ...updates
+    }));
+    await this.loadInitialData();
+  }
+
+  async deleteEntry(entry: TimeEntry) {
+    if (!entry.documentId) {
+      this.snackBar.open('Cannot delete entry: missing documentId', 'Close', {
+        duration: 3000,
+      });
+      return;
+    }
+
+    // Store the current data for rollback
+    const previousData = [...this.dataSource.data];
+
+    try {
+      // Update local state immediately
+      const currentData = this.dataSource.data.filter(e => e.date !== entry.date);
+      this.dataSource.data = currentData;
+      this.filterEntriesByDate();
+
+      // Then delete from Strapi
+      await firstValueFrom(this.timeEntryService.deleteTimeEntry(entry.documentId));
+      this.snackBar.open('Entry deleted successfully!', 'Close', {
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      // Restore previous state if API call fails
+      this.dataSource.data = previousData;
+      this.filterEntriesByDate();
+      this.snackBar.open('Failed to delete entry', 'Close', { duration: 3000 });
+    }
+  }
+
   computeStatus(entry: TimeEntry): string {
-    const seconds = entry.hoursWorked;
-    const day = entry.date;
-    const entryDate = new Date(day);
+    const hoursWorked = this.getHoursWorked(entry);
+    const seconds = hoursWorked * 3600;
+    const entryDate = new Date(entry.date);
 
     if (this.timerService.isWeekend(entryDate)) {
       return 'Weekend';
@@ -332,7 +424,7 @@ export class TimeTrackingComponent implements OnInit {
       return 'Error';
     } else if (seconds === 0) {
       return 'Untracked';
-    } else if (seconds < 8) {
+    } else if (hoursWorked < 8) {
       return 'Partially tracked';
     } else {
       return 'Tracked';
@@ -395,7 +487,7 @@ export class TimeTrackingComponent implements OnInit {
     const totalPossibleHours = monthlyEntries.length * 8; 
   
     monthlyEntries.forEach((entry) => {
-      totalHoursWorked += entry.hoursWorked;
+      totalHoursWorked += this.getHoursWorked(entry);
       const status = this.computeStatus(entry);
   
       if (status === 'Vacation Day') {
