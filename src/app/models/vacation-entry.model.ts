@@ -3,5 +3,5 @@ export interface VacationEntry {
     endDate: Date;
     duration: number;
     reason: string;
-    status: string;
+    status: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
   }

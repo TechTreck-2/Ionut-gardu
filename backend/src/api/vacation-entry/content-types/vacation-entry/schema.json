@@ -1,0 +1,47 @@
+{
+  "kind": "collectionType",
+  "collectionName": "vacation_entries",
+  "info": {
+    "singularName": "vacation-entry",
+    "pluralName": "vacation-entries",
+    "displayName": "Vacation Entry"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "startDate": {
+      "type": "date",
+      "required": true
+    },
+    "endDate": {
+      "type": "date",
+      "required": true
+    },
+    "duration": {
+      "type": "integer",
+      "required": true
+    },
+    "reason": {
+      "type": "string"
+    },
+    "approvalState": {
+      "type": "enumeration",
+      "required": true,
+      "default": "Pending",
+      "enum": [
+        "Pending",
+        "Approved",
+        "Rejected",
+        "Cancelled"
+      ]
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "vacation_entries"
+    }
+  }
+}

@@ -71,6 +71,12 @@
       "relation": "oneToMany",
       "target": "api::time-entry.time-entry",
       "mappedBy": "users_permissions_user"
+    },
+    "vacation_entries": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::vacation-entry.vacation-entry",
+      "mappedBy": "users_permissions_user"
     }
   }
 }

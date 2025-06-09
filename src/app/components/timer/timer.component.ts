@@ -41,17 +41,16 @@ export class TimerComponent implements OnInit {
   vacationService = inject(VacationService);
   timeEntryService = inject(TimeEntryService);
   vacationDaysLeft!: number;
-
   async ngOnInit(): Promise<void> {
     this.timerService.time$.subscribe((time) => {
       this.time = time;
       this.updateDataSource();
     });
     this.checkisWeekend();
-    this.checkisVacation();
+    await this.checkisVacation();
     await this.loadTimeEntries();
     this.timerService.loadState();
-    this.vacationService.updateVacationDaysLeft();
+    await this.vacationService.updateVacationDaysLeft();
     this.vacationDaysLeft = this.vacationService.getVacationDaysLeft();
   }
 
@@ -221,9 +220,8 @@ export class TimerComponent implements OnInit {
   checkisWeekend() {
     this.isWeekend = this.timerService.isWeekend(new Date());
   }
-
-  checkisVacation() {
-    this.isVacation = this.timerService.isVacationDay(new Date());
+  async checkisVacation() {
+    this.isVacation = await this.timerService.isVacationDay(new Date());
   }
 
   calculateAndFormatHoursWorked(

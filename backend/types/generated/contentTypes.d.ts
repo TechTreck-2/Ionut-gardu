@@ -407,6 +407,47 @@ export interface ApiTimeEntryTimeEntry extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiVacationEntryVacationEntry
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'vacation_entries';
+  info: {
+    displayName: 'Vacation Entry';
+    pluralName: 'vacation-entries';
+    singularName: 'vacation-entry';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    approvalState: Schema.Attribute.Enumeration<
+      ['Pending', 'Approved', 'Rejected', 'Cancelled']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Pending'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    duration: Schema.Attribute.Integer & Schema.Attribute.Required;
+    endDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::vacation-entry.vacation-entry'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    reason: Schema.Attribute.String;
+    startDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    users_permissions_user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface PluginContentReleasesRelease
   extends Struct.CollectionTypeSchema {
   collectionName: 'strapi_releases';
@@ -906,6 +947,10 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         minLength: 3;
       }>;
+    vacation_entries: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::vacation-entry.vacation-entry'
+    >;
   };
 }
 
@@ -920,6 +965,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::time-entry.time-entry': ApiTimeEntryTimeEntry;
+      'api::vacation-entry.vacation-entry': ApiVacationEntryVacationEntry;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

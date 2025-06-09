@@ -235,7 +235,7 @@ export class TimeTrackingComponent implements OnInit {
           case 'permissionLeaveDuration':
             return this.getPermissionLeaveDurationInSeconds(item);
           case 'status':
-            return this.computeStatus(item);
+            return this.getStatusSync(item);
           default:
             return '';
         }
@@ -409,37 +409,19 @@ export class TimeTrackingComponent implements OnInit {
     }
   }
 
-  computeStatus(entry: TimeEntry): string {
-    const hoursWorked = this.getHoursWorked(entry);
-    const seconds = hoursWorked * 3600;
-    const entryDate = new Date(entry.date);
-
-    if (this.timerService.isWeekend(entryDate)) {
-      return 'Weekend';
-    }
-
-    if (this.timerService.isVacationDay(entryDate)) {
-      return 'Vacation Day';
-    } else if (seconds < 0) {
-      return 'Error';
-    } else if (seconds === 0) {
-      return 'Untracked';
-    } else if (hoursWorked < 8) {
-      return 'Partially tracked';
-    } else {
-      return 'Tracked';
-    }
-  }
-
-  isDisabled(entry: TimeEntry): boolean {
-    const status = this.computeStatus(entry);
-    return status === 'Weekend' || status === 'Vacation Day';
+  private pad(num: number): string {
+    return num < 10 ? '0' + num : num.toString();
   }
 
   validateTimeFormat(time: string): boolean {
     const timeFormat = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/;
     return timeFormat.test(time);
   }
+
+  isWeekday = (date: Date | null): boolean => {
+    const day = (date || new Date()).getDay();
+    return day !== 0 && day !== 6;
+  };
 
   formatTime(seconds: number): string {
     const hours = Math.floor(seconds / 3600);
@@ -448,14 +430,60 @@ export class TimeTrackingComponent implements OnInit {
     return `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(secs)}`;
   }
 
-  private pad(num: number): string {
-    return num < 10 ? '0' + num : num.toString();
+  private getStatusSync(entry: TimeEntry): string {
+    const hoursWorked = this.getHoursWorked(entry);
+    const seconds = hoursWorked * 3600;
+    const entryDate = new Date(entry.date);
+
+    if (this.timerService.isWeekend(entryDate)) {
+      return 'Weekend';
+    }
+
+    // For sorting purposes, we'll use a simplified status without vacation check
+    if (seconds < 0) {
+      return 'Error';
+    } else if (seconds === 0) {
+      return 'Untracked';
+    } else if (
+      entry.clockInTime === '---' ||
+      entry.clockOutTime === '---'
+    ) {
+      return 'Partially tracked';
+    } else {
+      return 'Tracked';
+    }
   }
 
-  isWeekday = (date: Date | null): boolean => {
-    const day = (date || new Date()).getDay();
-    return day !== 0 && day !== 6;
-  };
+  async computeStatus(entry: TimeEntry): Promise<string> {
+    const hoursWorked = this.getHoursWorked(entry);
+    const seconds = hoursWorked * 3600;
+    const entryDate = new Date(entry.date);
+
+    if (this.timerService.isWeekend(entryDate)) {
+      return 'Weekend';
+    }
+
+    const isVacation = await this.timerService.isVacationDay(entryDate);
+    if (isVacation) {
+      return 'Vacation Day';
+    } else if (seconds < 0) {
+      return 'Error';
+    } else if (seconds === 0) {
+      return 'Untracked';
+    } else if (
+      entry.clockInTime === '---' ||
+      entry.clockOutTime === '---'
+    ) {
+      return 'Partially tracked';
+    } else {
+      return 'Tracked';
+    }
+  }
+
+  async isDisabled(entry: TimeEntry): Promise<boolean> {
+    const status = await this.computeStatus(entry);
+    return status === 'Weekend' || status === 'Vacation Day';
+  }
 
   calculateDetailedMonthlySummary() {
     if (!this.startDate || !this.endDate) {
@@ -484,13 +512,15 @@ export class TimeTrackingComponent implements OnInit {
     let totalHoursWorked = 0;
     let vacationDays = 0;
     let untrackedOrPartiallyTrackedDays = 0;
-    const totalPossibleHours = monthlyEntries.length * 8; 
+    const totalPossibleHours = monthlyEntries.length * 8;
   
+    // Since we're in a sync method, use the sync status for summary
     monthlyEntries.forEach((entry) => {
       totalHoursWorked += this.getHoursWorked(entry);
-      const status = this.computeStatus(entry);
+      const status = this.getStatusSync(entry);
   
-      if (status === 'Vacation Day') {
+      // For vacation days, we'll only count weekends since vacation status is async
+      if (this.timerService.isWeekend(new Date(entry.date))) {
         vacationDays++;
       } else if (status === 'Untracked' || status === 'Partially tracked') {
         untrackedOrPartiallyTrackedDays++;

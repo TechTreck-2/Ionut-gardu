@@ -7,6 +7,7 @@ import { MatTableComponent } from '../common/mat-table/mat-table.component';
 import { MatButtonModule } from '@angular/material/button';
 import { VacationEntryDialogComponent } from '../vacation-entry-dialog/vacation-entry-dialog.component';
 import { CommonModule } from '@angular/common';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-vacation-planning',
@@ -15,7 +16,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [MatTableComponent, MatButtonModule, CommonModule],
 })
-export class VacationPlanningComponent {
+export class VacationPlanningComponent implements OnInit {
   entries: VacationEntry[] = [];
   displayedColumns: string[] = [
     'actions',
@@ -29,16 +30,27 @@ export class VacationPlanningComponent {
   vacationService = inject(VacationService);
   dialog = inject(MatDialog);
   snackBar = inject(MatSnackBar);
-  
 
-  ngOnInit(): void {
-    this.entries = this.vacationService.getVacationEntries();
-    this.updateVacationDaysLeft();
+  async ngOnInit(): Promise<void> {
+    try {
+      const entries = await firstValueFrom(this.vacationService.getVacationEntries());
+      this.entries = entries;
+      await this.updateVacationDaysLeft();
+    } catch (error) {
+      console.error('Error loading vacation entries:', error);
+      this.snackBar.open('Error loading vacation entries', 'Close', { duration: 3000 });
+    }
   }
 
-  ngOnChanges(): void {
-    this.entries = this.vacationService.getVacationEntries();
-    this.updateVacationDaysLeft();
+  async ngOnChanges(): Promise<void> {
+    try {
+      const entries = await firstValueFrom(this.vacationService.getVacationEntries());
+      this.entries = entries;
+      await this.updateVacationDaysLeft();
+    } catch (error) {
+      console.error('Error reloading vacation entries:', error);
+      this.snackBar.open('Error reloading vacation entries', 'Close', { duration: 3000 });
+    }
   }
 
   openModal() {
@@ -47,10 +59,10 @@ export class VacationPlanningComponent {
       data: {
         existingEntries: this.entries,
         vacationDaysLeft: this.vacationDaysLeft,
-      }, // Pass vacationDaysLeft
+      },
     });
 
-    dialogRef.afterClosed().subscribe((result) => {
+    dialogRef.afterClosed().subscribe(async (result) => {
       if (result) {
         const startDate = new Date(result.startDate);
         const endDate = new Date(result.endDate);
@@ -64,8 +76,14 @@ export class VacationPlanningComponent {
             reason: result.reason,
             status: 'Pending',
           };
-          this.saveEntry(newEntry);
-          console.log('Entry saved:', this.entries);
+
+          try {
+            await this.saveEntry(newEntry);
+            this.snackBar.open('Vacation request submitted successfully', 'Close', { duration: 3000 });
+          } catch (error) {
+            console.error('Error saving vacation entry:', error);
+            this.snackBar.open('Error saving vacation request', 'Close', { duration: 3000 });
+          }
         }
       }
     });
@@ -87,14 +105,25 @@ export class VacationPlanningComponent {
     return count;
   }
 
-  saveEntry(entry: VacationEntry) {
-    this.vacationService.saveVacationEntry(entry);
-    this.entries = this.vacationService.getVacationEntries();
-    this.updateVacationDaysLeft();
+  async saveEntry(entry: VacationEntry): Promise<void> {
+    try {
+      await this.vacationService.saveVacationEntry(entry);
+      const entries = await firstValueFrom(this.vacationService.getVacationEntries());
+      this.entries = entries;
+      await this.updateVacationDaysLeft();
+    } catch (error) {
+      console.error('Error in saveEntry:', error);
+      throw error;
+    }
   }
   
-  updateVacationDaysLeft() {
-    this.vacationService.updateVacationDaysLeft();
-    this.vacationDaysLeft = this.vacationService.getVacationDaysLeft();
+  async updateVacationDaysLeft(): Promise<void> {
+    try {
+      await this.vacationService.updateVacationDaysLeft();
+      this.vacationDaysLeft = this.vacationService.getVacationDaysLeft();
+    } catch (error) {
+      console.error('Error updating vacation days left:', error);
+      throw error;
+    }
   }
 }

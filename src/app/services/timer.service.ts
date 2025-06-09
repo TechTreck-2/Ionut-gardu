@@ -226,9 +226,8 @@ export class TimerService {
     const day = date.getDay();
     return day === 0 || day === 6;
   }
-
-  isVacationDay(date: Date): boolean {
-    return this.vacationService.isVacationDay(date);
+  async isVacationDay(date: Date): Promise<boolean> {
+    return await this.vacationService.isVacationDay(date);
   }
 
   calculateHoursWorked(
