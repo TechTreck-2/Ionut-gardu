@@ -529,8 +529,7 @@ export class TimeTrackingComponent implements OnInit {
       //////console.log('[TimeTrackingComponent] Entry is fully tracked');
       return 'Tracked';
     }
-  }
-  computeStatus(entry: TimeEntry): string {
+  }  computeStatus(entry: TimeEntry): string {
     ////////console.log('[TimeTrackingComponent] computeStatus called for entry date:', entry.date);
     const hoursWorked = this.getHoursWorked(entry);
     const seconds = hoursWorked * 3600;
@@ -553,7 +552,8 @@ export class TimeTrackingComponent implements OnInit {
       return 'Untracked';
     } else if (
       entry.clockInTime === '---' ||
-      entry.clockOutTime === '---'
+      entry.clockOutTime === '---' ||
+      hoursWorked < 8  // Added check for hours worked less than 8
     ) {
       //console.log('[TimeTrackingComponent] Entry is partially tracked');
       return 'Partially tracked';
