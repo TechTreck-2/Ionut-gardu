@@ -116,7 +116,7 @@ export class TimeTrackingComponent implements OnInit {
       }
       
       this.dataSource.data = currentData;
-      this.filterEntriesByDate();
+      //this.filterEntriesByDate();
     });
   }
 
