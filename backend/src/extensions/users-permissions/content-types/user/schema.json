@@ -77,6 +77,12 @@
       "relation": "oneToMany",
       "target": "api::vacation-entry.vacation-entry",
       "mappedBy": "users_permissions_user"
+    },
+    "permission_entries": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::permission-entry.permission-entry",
+      "mappedBy": "users_permissions_user"
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableComponent } from '../common/mat-table/mat-table.component';
@@ -7,6 +7,7 @@ import { PermissionEntry } from '../../models/permission-entry.model';
 import { PermissionLeaveService } from '../../services/permission-leave.service';
 import { CommonModule } from '@angular/common';
 import { PermissionEntryDialogComponent } from '../permission-entry-dialog/permission-entry-dialog.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-permission-leave',
@@ -15,16 +16,29 @@ import { PermissionEntryDialogComponent } from '../permission-entry-dialog/permi
   standalone: true,
   imports: [MatTableComponent, MatButtonModule, CommonModule],
 })
-export class PermissionLeaveComponent implements OnInit {
+export class PermissionLeaveComponent implements OnInit, OnDestroy {
   entries: PermissionEntry[] = [];
   displayedColumns: string[] = ['actions', 'date', 'startTime', 'endTime', 'leave-duration', 'status'];
   permissionLeaveService = inject(PermissionLeaveService);
   dialog = inject(MatDialog);
   snackBar = inject(MatSnackBar);
+  private subscriptions = new Subscription();
   
 
   ngOnInit(): void {
+    // Initialize with any existing entries
     this.entries = this.permissionLeaveService.getPermissionEntries();
+    
+    // Subscribe to future updates
+    this.subscriptions.add(
+      this.permissionLeaveService.getPermissionEntriesAsync().subscribe(
+        entries => this.entries = entries
+      )
+    );
+  }
+  
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   openModal() {
@@ -45,16 +59,27 @@ export class PermissionLeaveComponent implements OnInit {
       }
     });
   }
-
   saveEntry(entry: PermissionEntry) {
-    this.permissionLeaveService.savePermissionEntry(entry);
-    this.entries = this.permissionLeaveService.getPermissionEntries();
-    this.snackBar.open('Entry saved successfully', 'Close', { duration: 2000 });
+    this.subscriptions.add(
+      this.permissionLeaveService.savePermissionEntry(entry).subscribe({
+        next: () => this.snackBar.open('Entry saved successfully', 'Close', { duration: 2000 }),
+        error: (err) => {
+          console.error('Error saving entry:', err);
+          this.snackBar.open('Failed to save entry', 'Close', { duration: 2000 });
+        }
+      })
+    );
   }
 
   deleteEntry(entry: PermissionEntry) {
-    this.permissionLeaveService.deletePermissionEntry(entry);
-    this.entries = this.permissionLeaveService.getPermissionEntries();
-    this.snackBar.open('Entry deleted successfully', 'Close', { duration: 2000 });
+    this.subscriptions.add(
+      this.permissionLeaveService.deletePermissionEntry(entry).subscribe({
+        next: () => this.snackBar.open('Entry deleted successfully', 'Close', { duration: 2000 }),
+        error: (err) => {
+          console.error('Error deleting entry:', err);
+          this.snackBar.open('Failed to delete entry', 'Close', { duration: 2000 });
+        }
+      })
+    );
   }
 }

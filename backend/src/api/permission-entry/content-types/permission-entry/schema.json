@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "permission_entries",
+  "info": {
+    "singularName": "permission-entry",
+    "pluralName": "permission-entries",
+    "displayName": "Permission Entry"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "date": {
+      "type": "string",
+      "required": true
+    },
+    "startTime": {
+      "type": "string",
+      "required": true
+    },
+    "endTime": {
+      "type": "string",
+      "required": true
+    },
+    "approvalStatus": {
+      "type": "enumeration",
+      "required": true,
+      "default": "Pending",
+      "enum": [
+        "Approved",
+        "Pending",
+        "Rejected"
+      ]
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "permission_entries"
+    }
+  }
+}

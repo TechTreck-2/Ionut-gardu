@@ -373,6 +373,46 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiPermissionEntryPermissionEntry
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'permission_entries';
+  info: {
+    displayName: 'Permission Entry';
+    pluralName: 'permission-entries';
+    singularName: 'permission-entry';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    approvalStatus: Schema.Attribute.Enumeration<
+      ['Approved', 'Pending', 'Rejected']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Pending'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    date: Schema.Attribute.String & Schema.Attribute.Required;
+    endTime: Schema.Attribute.String & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::permission-entry.permission-entry'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    startTime: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    users_permissions_user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiTimeEntryTimeEntry extends Struct.CollectionTypeSchema {
   collectionName: 'time_entries';
   info: {
@@ -927,6 +967,10 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
+    permission_entries: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::permission-entry.permission-entry'
+    >;
     provider: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     resetPasswordToken: Schema.Attribute.String & Schema.Attribute.Private;
@@ -964,6 +1008,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::permission-entry.permission-entry': ApiPermissionEntryPermissionEntry;
       'api::time-entry.time-entry': ApiTimeEntryTimeEntry;
       'api::vacation-entry.vacation-entry': ApiVacationEntryVacationEntry;
       'plugin::content-releases.release': PluginContentReleasesRelease;

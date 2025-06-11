@@ -1,30 +1,64 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { BehaviorSubject, Observable, of, tap, catchError } from 'rxjs';
 import { PermissionEntry } from '../models/permission-entry.model';
+import { PermissionLeaveApiService } from './permission-leave-api.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PermissionLeaveService {
-  private storageKey = 'permissionEntries';
+  // For reactive state management
+  private entriesSubject = new BehaviorSubject<PermissionEntry[]>([]);
+  public entries$ = this.entriesSubject.asObservable();
+  
+  private apiService = inject(PermissionLeaveApiService);
+  
+  constructor() {
+    this.loadPermissionEntries();
+  }
+  
+  private loadPermissionEntries(): void {
+    this.apiService.getPermissionEntries()
+      .pipe(
+        catchError(error => {
+          console.error('Failed to load entries from API', error);
+          return of([]);
+        })
+      )
+      .subscribe(entries => this.entriesSubject.next(entries));
+  }
 
   getPermissionEntries(): PermissionEntry[] {
-    const data = localStorage.getItem(this.storageKey);
-    return data ? JSON.parse(data) : [];
+    return this.entriesSubject.value;
   }
 
-  savePermissionEntry(entry: PermissionEntry): void {
-    const entries = this.getPermissionEntries();
-    entries.push(entry);
-    localStorage.setItem(this.storageKey, JSON.stringify(entries));
+  getPermissionEntriesAsync(): Observable<PermissionEntry[]> {
+    return this.entries$;
   }
 
-  deletePermissionEntry(entry: PermissionEntry): void {
-    const entries = this.getPermissionEntries();
-    const index = entries.findIndex(e => e.startTime === entry.startTime && e.endTime === entry.endTime);
-    if (index > -1) {
-      entries.splice(index, 1);
-      localStorage.setItem(this.storageKey, JSON.stringify(entries));
+  savePermissionEntry(entry: PermissionEntry): Observable<PermissionEntry> {
+    return this.apiService.createPermissionEntry(entry).pipe(
+      tap(() => this.loadPermissionEntries()),
+      catchError(error => {
+        console.error('Failed to save entry to API', error);
+        return of(entry);
+      })
+    );
+  }
+
+  deletePermissionEntry(entry: PermissionEntry): Observable<void> {
+    if (!entry.id) {
+      console.error('Cannot delete entry without an ID:', entry);
+      return of(undefined);
     }
+    
+    return this.apiService.deletePermissionEntry(entry.id).pipe(
+      tap(() => this.loadPermissionEntries()),
+      catchError(error => {
+        console.error('Failed to delete entry from API', error);
+        return of(undefined);
+      })
+    );
   }
 
   calculateDuration(entry: PermissionEntry): string {
