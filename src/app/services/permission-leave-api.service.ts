@@ -16,23 +16,40 @@ export class PermissionLeaveApiService {
   private authService = inject(AuthService);
 
   constructor(private http: HttpClient) {}
-
   getPermissionEntries(): Observable<PermissionEntry[]> {
-    return this.http.get<any>(this.apiUrl)
-      .pipe(
-        map(response => {
-          if (!response) {
-            console.error('Empty API response for permission entries');
-            return [];
-          }
-          
-          return this.mapToPermissionEntries(response);
-        }),
-        catchError(error => {
-          console.error('Error fetching permission entries:', error);
+    return this.authService.getCurrentUserId().pipe(
+      catchError(error => {
+        console.error('Failed to get current user ID:', error);
+        return of(null); // Return null if user ID can't be fetched
+      }),
+      switchMap(userId => {
+        // If there's no user ID, return an empty array
+        if (!userId) {
+          console.warn('No user ID available, returning empty entries array');
           return of([]);
-        })
-      );
+        }
+
+        // Build the URL with filter for current user
+        const url = `${this.apiUrl}?filters[users_permissions_user][id][$eq]=${userId}&populate=users_permissions_user`;
+        console.log(`Fetching permission entries for user ID: ${userId}`);
+        
+        return this.http.get<any>(url)
+          .pipe(
+            map(response => {
+              if (!response) {
+                console.error('Empty API response for permission entries');
+                return [];
+              }
+              
+              return this.mapToPermissionEntries(response);
+            }),
+            catchError(error => {
+              console.error('Error fetching permission entries:', error);
+              return of([]);
+            })
+          );
+      })
+    );
   }
   getPermissionEntryById(id: number): Observable<PermissionEntry> {
     return this.http.get<any>(`${this.apiUrl}/${id}`)

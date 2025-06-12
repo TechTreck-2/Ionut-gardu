@@ -83,6 +83,12 @@
       "relation": "oneToMany",
       "target": "api::permission-entry.permission-entry",
       "mappedBy": "users_permissions_user"
+    },
+    "home_office_locations": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::home-office-location.home-office-location",
+      "mappedBy": "users_permissions_user"
     }
   }
 }

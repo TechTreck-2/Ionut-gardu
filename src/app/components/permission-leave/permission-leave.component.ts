@@ -18,22 +18,33 @@ import { Subscription } from 'rxjs';
 })
 export class PermissionLeaveComponent implements OnInit, OnDestroy {
   entries: PermissionEntry[] = [];
+  isLoading = true;
+  hasError = false;
   displayedColumns: string[] = ['actions', 'date', 'startTime', 'endTime', 'leave-duration', 'status'];
   permissionLeaveService = inject(PermissionLeaveService);
   dialog = inject(MatDialog);
   snackBar = inject(MatSnackBar);
   private subscriptions = new Subscription();
-  
-
-  ngOnInit(): void {
-    // Initialize with any existing entries
+    ngOnInit(): void {
+    // Initialize with any existing entries (already filtered for current user by the API service)
     this.entries = this.permissionLeaveService.getPermissionEntries();
     
-    // Subscribe to future updates
+    // Subscribe to future updates (only entries for the logged-in user will be received)
+    this.isLoading = true;
     this.subscriptions.add(
-      this.permissionLeaveService.getPermissionEntriesAsync().subscribe(
-        entries => this.entries = entries
-      )
+      this.permissionLeaveService.getPermissionEntriesAsync().subscribe({
+        next: (entries) => {
+          this.entries = entries;
+          this.isLoading = false;
+          this.hasError = false;
+        },
+        error: (error) => {
+          console.error('Error loading permission entries:', error);
+          this.isLoading = false;
+          this.hasError = true;
+          this.snackBar.open('Failed to load your permission leave requests', 'Close', { duration: 5000 });
+        }
+      })
     );
   }
   

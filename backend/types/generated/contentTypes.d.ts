@@ -373,6 +373,39 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiHomeOfficeLocationHomeOfficeLocation
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'home_office_locations';
+  info: {
+    displayName: 'Home Office Location';
+    pluralName: 'home-office-locations';
+    singularName: 'home-office-location';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    address: Schema.Attribute.String & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::home-office-location.home-office-location'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    users_permissions_user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiPermissionEntryPermissionEntry
   extends Struct.CollectionTypeSchema {
   collectionName: 'permission_entries';
@@ -956,6 +989,10 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
+    home_office_locations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::home-office-location.home-office-location'
+    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1008,6 +1045,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::home-office-location.home-office-location': ApiHomeOfficeLocationHomeOfficeLocation;
       'api::permission-entry.permission-entry': ApiPermissionEntryPermissionEntry;
       'api::time-entry.time-entry': ApiTimeEntryTimeEntry;
       'api::vacation-entry.vacation-entry': ApiVacationEntryVacationEntry;

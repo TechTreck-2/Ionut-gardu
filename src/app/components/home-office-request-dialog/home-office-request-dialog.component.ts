@@ -22,7 +22,8 @@ import { HomeOfficeRequestService } from '../../services/home-office-request.ser
 export class HomeOfficeRequestDialogComponent {
   form: FormGroup;
   locations: HomeOfficeEntry[] = [];
-  requests : HomeOfficeRequestEntry[] = [];
+  requests: HomeOfficeRequestEntry[] = [];
+
   constructor(
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<HomeOfficeRequestDialogComponent>,
@@ -30,13 +31,20 @@ export class HomeOfficeRequestDialogComponent {
     private homeOfficeService: HomeOfficeService,
     private homeOfficeRequestService: HomeOfficeRequestService
   ) {
-    this.locations = this.homeOfficeService.getEntries();
-    this.requests = this.homeOfficeRequestService.getEntries();
+    // Initialize form
     this.form = this.fb.group({
       address: ['', Validators.required],
       startDate: ['', Validators.required],
       endDate: ['', Validators.required],
     });
+    
+    // Load locations from Strapi (returns Observable)
+    this.homeOfficeService.getEntries().subscribe(locations => {
+      this.locations = locations;
+    });
+    
+    // Load requests from localStorage (returns array directly)
+    this.requests = this.homeOfficeRequestService.getEntries();
   }
 
   dateFilter = (date: Date | null): boolean => {
