@@ -28,19 +28,20 @@ export class HomeOfficeRequestComponent implements OnInit {
   ngOnInit(): void {
     this.loadEntries();
   }
-
   loadEntries() {
     this.loading = true;
+    console.log('🚀 Loading home office requests from Strapi...');
     this.homeOfficeRequestService.getEntries()
       .pipe(
         catchError(error => {
-          console.error('Error loading home office requests:', error);
+          console.error('❌ Error loading home office requests:', error);
           this.snackBar.open('Failed to load home office requests', 'Close', { duration: 3000 });
           return of([]);
         }),
         finalize(() => this.loading = false)
       )
       .subscribe(entries => {
+        console.log('✅ Processed entries from service:', entries);
         this.entries = entries;
       });
   }
@@ -83,15 +84,15 @@ export class HomeOfficeRequestComponent implements OnInit {
   }  deleteEntry(entry: HomeOfficeRequestEntry) {
     if (confirm('Are you sure you want to delete this request?')) {
       this.loading = true;
-      const entryId = entry.id || (entry.documentId ? parseInt(entry.documentId) : undefined);
+      const documentId = entry.documentId;
       
-      if (!entryId) {
-        this.snackBar.open('Cannot delete: Missing entry ID', 'Close', { duration: 3000 });
+      if (!documentId) {
+        this.snackBar.open('Cannot delete: Missing document ID', 'Close', { duration: 3000 });
         this.loading = false;
         return;
       }
       
-      this.homeOfficeRequestService.deleteEntry(entryId)
+      this.homeOfficeRequestService.deleteEntry(documentId)
         .pipe(
           catchError(error => {
             console.error('Error deleting home office request:', error);
@@ -107,20 +108,17 @@ export class HomeOfficeRequestComponent implements OnInit {
           }
         });
     }
-  }
-  // Event handlers for mat-table events with documentId support
+  }  // Event handlers for mat-table events with documentId support
   onEntryDeleted(entry: HomeOfficeRequestEntry): void {
     console.log('Entry deleted with documentId:', entry.documentId);
-    // Use the entryId or documentId from Strapi for deletion
-    const entryId = entry.id || (entry.documentId ? parseInt(entry.documentId) : undefined);
-    if (entryId) {
-      this.deleteEntry({ ...entry, id: entryId });
+    // Use the documentId for deletion
+    if (entry.documentId) {
+      this.deleteEntry(entry);
     } else {
-      console.error('Cannot delete entry without ID:', entry);
-      this.snackBar.open('Failed to delete: Missing entry ID', 'Close', { duration: 3000 });
+      console.error('Cannot delete entry without documentId:', entry);
+      this.snackBar.open('Failed to delete: Missing document ID', 'Close', { duration: 3000 });
     }
   }
-
   onEntryApproved(entry: HomeOfficeRequestEntry): void {
     console.log('Entry approved with documentId:', entry.documentId);
     // Update the status to 'Approved' and save
@@ -128,9 +126,8 @@ export class HomeOfficeRequestComponent implements OnInit {
       ...entry, 
       status: 'Approved' as 'Approved'
     };
-    const entryId = entry.id || (entry.documentId ? parseInt(entry.documentId) : undefined);
-    if (entryId) {
-      this.updateEntryStatus(entryId, updatedEntry);
+    if (entry.documentId) {
+      this.updateEntryStatus(entry.documentId, updatedEntry);
     }
   }
 
@@ -141,15 +138,14 @@ export class HomeOfficeRequestComponent implements OnInit {
       ...entry, 
       status: 'Rejected' as 'Rejected' // Using Rejected for Cancel since the model doesn't have 'Cancelled'
     };
-    const entryId = entry.id || (entry.documentId ? parseInt(entry.documentId) : undefined);
-    if (entryId) {
-      this.updateEntryStatus(entryId, updatedEntry);
+    if (entry.documentId) {
+      this.updateEntryStatus(entry.documentId, updatedEntry);
     }
   }
 
-  private updateEntryStatus(id: number, entry: HomeOfficeRequestEntry): void {
+  private updateEntryStatus(documentId: string, entry: HomeOfficeRequestEntry): void {
     this.loading = true;
-    this.homeOfficeRequestService.updateEntry(id, entry)
+    this.homeOfficeRequestService.updateEntry(documentId, entry)
       .pipe(
         catchError(error => {
           console.error('Error updating entry status:', error);

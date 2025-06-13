@@ -55,7 +55,7 @@ export class PermissionService {
   savePermissionEntry(entry: PermissionEntry): Observable<PermissionEntry> {
     return this.createPermissionEntry(entry).pipe(
       tap(response => {
-        console.log('Created permission entry:', response);
+        //console.log('Created permission entry:', response);
         this.loadPermissionEntries();
       }),
       catchError(error => {
@@ -76,7 +76,7 @@ export class PermissionService {
     
     return this.deletePermissionEntryApi(entry.documentId).pipe(
       tap(() => {
-        console.log(`Deleted permission entry with documentId: ${entry.documentId}`);
+        //console.log(`Deleted permission entry with documentId: ${entry.documentId}`);
         this.loadPermissionEntries();
       }),
       catchError(error => {
@@ -133,7 +133,7 @@ export class PermissionService {
     
     return this.updatePermissionEntryApi(documentId, updatedEntry).pipe(
       tap(response => {
-        console.log(`Updated permission entry status to ${status}:`, response);
+        //console.log(`Updated permission entry status to ${status}:`, response);
         this.loadPermissionEntries();
       }),
       catchError(error => {
@@ -165,7 +165,7 @@ export class PermissionService {
     this.getPermissionEntriesApi()
       .pipe(
         tap(response => {
-          console.log('Loaded permission entries:', response);
+          //console.log('Loaded permission entries:', response);
         }),
         catchError(error => {
           console.error('Failed to load entries from API', error);
@@ -197,11 +197,7 @@ export class PermissionService {
         return this.http.get<any>(url)
           .pipe(
             map(response => {
-              // Log the raw response from Strapi
-              console.log('Raw Strapi response for getPermissionEntries:', {
-                url,
-                responseBody: JSON.stringify(response, null, 2)
-              });
+              
               
               if (!response) {
                 console.error('Empty API response for permission entries');
@@ -226,11 +222,7 @@ export class PermissionService {
     return this.http.get<any>(`${this.apiUrl}/${id}`)
       .pipe(
         map(response => {
-          // Log the raw response from Strapi
-          console.log('Raw Strapi response for getPermissionEntryById:', {
-            url: `${this.apiUrl}/${id}`,
-            responseBody: JSON.stringify(response, null, 2)
-          });
+        
           
           if (!response) {
             throw new Error('Permission entry not found');
@@ -283,12 +275,8 @@ export class PermissionService {
         this.http.post<any>(this.apiUrl, strapiData)
           .pipe(
             map(response => {
-              // Log the raw response from Strapi
-              console.log('Raw Strapi response for createPermissionEntry:', {
-                url: this.apiUrl,
-                requestPayload: strapiData,
-                responseBody: JSON.stringify(response, null, 2)
-              });
+              
+              
               
               if (!response) {
                 console.error('Empty API response');
@@ -335,17 +323,11 @@ export class PermissionService {
       }
     };
       
-    console.log(`Updating permission entry with documentId: ${documentId}`, strapiData);
+    //console.log(`Updating permission entry with documentId: ${documentId}`, strapiData);
     return this.http.put<any>(`${this.apiUrl}/${documentId}`, strapiData)
       .pipe(
         map(response => {
-          // Log the raw response for debugging
-          console.log('Raw response from Strapi update API call:', {
-            url: `${this.apiUrl}/${documentId}`,
-            requestPayload: strapiData,
-            responseStatus: 'Success',
-            responseBody: JSON.stringify(response, null, 2)
-          });
+          
           
           if (!response) {
             console.error('Empty API response');
@@ -381,11 +363,7 @@ export class PermissionService {
   private deletePermissionEntryApi(documentId: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${documentId}`).pipe(
       tap(() => {
-        // Log the raw response from Strapi (delete returns void)
-        console.log('Raw Strapi response for deletePermissionEntry:', {
-          url: `${this.apiUrl}/${documentId}`,
-          responseStatus: 'Success (void response)',
-        });
+        
       }),
       catchError(error => {
         console.error(`Error deleting permission entry with documentId ${documentId}:`, error);
@@ -400,23 +378,17 @@ export class PermissionService {
    * Map Strapi response to permission entries
    */
   private mapToPermissionEntries(response: StrapiPermissionEntryResponse | any): PermissionEntry[] {
-    console.log('Mapping response data structure:', {
-      responseType: typeof response,
-      hasDataProperty: response && 'data' in response,
-      dataIsArray: response && 'data' in response && Array.isArray(response.data),
-      isArray: Array.isArray(response),
-      responseKeys: response ? Object.keys(response) : []
-    });
+    
     
     // Handle standard Strapi response format
     if (response && Array.isArray(response.data)) {
-      console.log(`Processing ${response.data.length} permission entries from standard Strapi format`);
+      //console.log(`Processing ${response.data.length} permission entries from standard Strapi format`);
       return response.data.map((item: any) => this.mapToPermissionEntry(item));
     }
     
     // Handle direct array response
     if (Array.isArray(response)) {
-      console.log(`Processing ${response.length} permission entries from direct array format`);
+      //console.log(`Processing ${response.length} permission entries from direct array format`);
       return response.map((item: any) => this.mapToPermissionEntry(item));
     }
     
@@ -437,18 +409,6 @@ export class PermissionService {
       };
     }
     
-    // Log the structure of the item for debugging
-    console.log('Permission entry item structure:', {
-      itemType: typeof item,
-      hasId: 'id' in item,
-      id: item.id,
-      hasAttributes: 'attributes' in item,
-      attributesKeys: item.attributes ? Object.keys(item.attributes) : [],
-      topLevelKeys: Object.keys(item),
-      hasApprovalStatus: item.attributes ? 'approvalStatus' in item.attributes : false,
-      hasDirectStatus: 'status' in item,
-      hasDirectApprovalStatus: 'approvalStatus' in item
-    });
       // Extract documentId from different possible locations or generate from id
     const entryId = item.id;
     // Look for documentId in all possible locations in the response
@@ -460,12 +420,7 @@ export class PermissionService {
     // Ensure that documentId is always a string
     const finalDocumentId = rawDocumentId ? rawDocumentId.toString() : generatedDocumentId;
     
-    console.log('Permission documentId resolution:', {
-      entryId,
-      rawDocumentId,
-      generatedDocumentId,
-      finalDocumentId
-    });
+    
     
     // Check if the response is in the expected format with attributes
     if (item.attributes) {
