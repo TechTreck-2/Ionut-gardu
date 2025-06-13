@@ -30,18 +30,18 @@ export class HomeOfficeRequestComponent implements OnInit {
   }
   loadEntries() {
     this.loading = true;
-    console.log('🚀 Loading home office requests from Strapi...');
+    //console.log(' Loading home office requests from Strapi...');
     this.homeOfficeRequestService.getEntries()
       .pipe(
         catchError(error => {
-          console.error('❌ Error loading home office requests:', error);
+          console.error(' Error loading home office requests:', error);
           this.snackBar.open('Failed to load home office requests', 'Close', { duration: 3000 });
           return of([]);
         }),
         finalize(() => this.loading = false)
       )
       .subscribe(entries => {
-        console.log('✅ Processed entries from service:', entries);
+        //console.log(' Processed entries from service:', entries);
         this.entries = entries;
       });
   }
