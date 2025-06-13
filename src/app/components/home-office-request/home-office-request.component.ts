@@ -7,13 +7,15 @@ import { CommonModule } from '@angular/common';
 import { HomeOfficeRequestEntry } from '../../models/home-office-request-entry.model';
 import { HomeOfficeRequestService } from '../../services/home-office-request.service';
 import { HomeOfficeRequestDialogComponent } from '../home-office-request-dialog/home-office-request-dialog.component';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { catchError, finalize, of } from 'rxjs';
 
 @Component({
   selector: 'app-home-office-request',
   templateUrl: './home-office-request.component.html',
   styleUrls: ['./home-office-request.component.css'],
   standalone: true,
-  imports: [MatTableComponent, MatButtonModule, CommonModule],
+  imports: [MatTableComponent, MatButtonModule, CommonModule, MatProgressSpinnerModule],
 })
 export class HomeOfficeRequestComponent implements OnInit {
   entries: HomeOfficeRequestEntry[] = [];
@@ -21,9 +23,26 @@ export class HomeOfficeRequestComponent implements OnInit {
   homeOfficeRequestService = inject(HomeOfficeRequestService);
   dialog = inject(MatDialog);
   snackBar = inject(MatSnackBar);
+  loading = false;
 
   ngOnInit(): void {
-    this.entries = this.homeOfficeRequestService.getEntries();
+    this.loadEntries();
+  }
+
+  loadEntries() {
+    this.loading = true;
+    this.homeOfficeRequestService.getEntries()
+      .pipe(
+        catchError(error => {
+          console.error('Error loading home office requests:', error);
+          this.snackBar.open('Failed to load home office requests', 'Close', { duration: 3000 });
+          return of([]);
+        }),
+        finalize(() => this.loading = false)
+      )
+      .subscribe(entries => {
+        this.entries = entries;
+      });
   }
 
   openModal() {
@@ -44,16 +63,42 @@ export class HomeOfficeRequestComponent implements OnInit {
       }
     });
   }
-
   saveEntry(entry: HomeOfficeRequestEntry) {
-    this.homeOfficeRequestService.saveEntry(entry);
-    this.entries = this.homeOfficeRequestService.getEntries();
-    this.snackBar.open('Request saved successfully', 'Close', { duration: 2000 });
+    this.loading = true;
+    this.homeOfficeRequestService.saveEntry(entry)
+      .pipe(
+        catchError(error => {
+          console.error('Error saving home office request:', error);
+          this.snackBar.open('Failed to save request', 'Close', { duration: 3000 });
+          return of(null);
+        }),
+        finalize(() => this.loading = false)
+      )
+      .subscribe((result: any) => {
+        if (result) {
+          this.snackBar.open('Request saved successfully', 'Close', { duration: 2000 });
+          this.loadEntries();
+        }
+      });
   }
-
-  deleteEntry(entry: HomeOfficeRequestEntry) {
-    this.homeOfficeRequestService.deleteEntry(entry);
-    this.entries = this.homeOfficeRequestService.getEntries();
-    this.snackBar.open('Request deleted successfully', 'Close', { duration: 2000 });
+  deleteEntry(entry: any) {
+    if (confirm('Are you sure you want to delete this request?')) {
+      this.loading = true;
+      this.homeOfficeRequestService.deleteEntry(entry.id)
+        .pipe(
+          catchError(error => {
+            console.error('Error deleting home office request:', error);
+            this.snackBar.open('Failed to delete request', 'Close', { duration: 3000 });
+            return of(null);
+          }),
+          finalize(() => this.loading = false)
+        )
+        .subscribe((result: any) => {
+          if (result !== null) {
+            this.snackBar.open('Request deleted successfully', 'Close', { duration: 2000 });
+            this.loadEntries();
+          }
+        });
+    }
   }
 }

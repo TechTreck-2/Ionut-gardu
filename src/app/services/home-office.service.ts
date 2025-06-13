@@ -24,7 +24,7 @@ export class HomeOfficeService {
     }
     
     // Log the request being made
-    console.log(`Fetching locations for user ID: ${userId}`);
+    //console.log(`Fetching locations for user ID: ${userId}`);
     
     // Filter by current user using Strapi's filtering
     return this.http.get<any>(
@@ -32,7 +32,7 @@ export class HomeOfficeService {
       { headers }
     ).pipe(
       map(response => {
-        console.log('Strapi response for getEntries:', response);
+        //console.log('Strapi response for getEntries:', response);
         
         // Check if the response has the expected structure
         if (!response) {
@@ -42,12 +42,12 @@ export class HomeOfficeService {
         
         // Determine if we're dealing with standard Strapi format or a different format
         const dataArray = response.data || response || [];
-        console.log('Data array to process:', dataArray);
+        //console.log('Data array to process:', dataArray);
         
         // Map the data to our model
         return dataArray.map((item: any) => {
           try {
-            console.log('Processing item:', item);
+            //console.log('Processing item:', item);
             
             // Handle different response formats
             if (item.attributes) {
@@ -108,10 +108,7 @@ export class HomeOfficeService {
     const userId = this.getCurrentUserId();
     
     // Log the data we're sending to better understand any issues
-    console.log('Sending data to Strapi:', {
-      address: entry.address,
-      userId: userId
-    });
+    //console.log('Sending data to Strapi:', {address: entry.address,userId: userId});
     
     // Format the data according to Strapi's structure
     const data = {
@@ -122,12 +119,12 @@ export class HomeOfficeService {
     };
     
     // Log the full request payload
-    console.log('Full request payload:', data);
+    //console.log('Full request payload:', data);
     
     return this.http.post<any>(`${this.apiUrl}`, data, { headers }).pipe(
       map(response => {
         // Log the response to see its actual structure
-        console.log('Strapi response for saveEntry:', response);
+        //console.log('Strapi response for saveEntry:', response);
         
         // Handle different response structures that Strapi might return
         try {
@@ -194,10 +191,10 @@ export class HomeOfficeService {
     }
     
     const headers = this.getAuthHeaders();
-    console.log(`Deleting entry with documentId: ${documentId}`);
+    //console.log(`Deleting entry with documentId: ${documentId}`);
     
     return this.http.delete(`${this.apiUrl}/${documentId}`, { headers }).pipe(
-      tap(response => console.log('Delete response:', response)),
+    
       catchError(err => {
         console.error('Error deleting home office location', err);
         throw err;
@@ -217,7 +214,7 @@ export class HomeOfficeService {
       });
     }
     
-    console.log('Using JWT token for request');
+    //console.log('Using JWT token for request');
     return new HttpHeaders({
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
@@ -239,7 +236,7 @@ export class HomeOfficeService {
         return null;
       }
       
-      console.log(`Current user ID from JWT: ${decoded.id}`);
+      //console.log(`Current user ID from JWT: ${decoded.id}`);
       return decoded.id;
     } catch (error) {
       console.error('Error decoding JWT', error);

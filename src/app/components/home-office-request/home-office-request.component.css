@@ -21,3 +21,16 @@
   margin: 5px;
   color: var(--mat-sys-on-surface);
 }
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  margin: 40px 0;
+}
+
+.no-data {
+  text-align: center;
+  padding: 30px;
+  color: #666;
+  font-style: italic;
+}

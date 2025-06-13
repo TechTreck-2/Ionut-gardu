@@ -89,6 +89,12 @@
       "relation": "oneToMany",
       "target": "api::home-office-location.home-office-location",
       "mappedBy": "users_permissions_user"
+    },
+    "home_office_requests": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::home-office-request.home-office-request",
+      "mappedBy": "users_permissions_user"
     }
   }
 }

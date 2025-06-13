@@ -31,7 +31,7 @@ export class PermissionLeaveApiService {
 
         // Build the URL with filter for current user
         const url = `${this.apiUrl}?filters[users_permissions_user][id][$eq]=${userId}&populate=users_permissions_user`;
-        console.log(`Fetching permission entries for user ID: ${userId}`);
+        //console.log(`Fetching permission entries for user ID: ${userId}`);
         
         return this.http.get<any>(url)
           .pipe(

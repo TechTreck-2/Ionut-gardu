@@ -406,6 +406,46 @@ export interface ApiHomeOfficeLocationHomeOfficeLocation
   };
 }
 
+export interface ApiHomeOfficeRequestHomeOfficeRequest
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'home_office_requests';
+  info: {
+    displayName: 'Home Office Request';
+    pluralName: 'home-office-requests';
+    singularName: 'home-office-request';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    address: Schema.Attribute.String & Schema.Attribute.Required;
+    approvalStatus: Schema.Attribute.Enumeration<
+      ['Pending', 'Approved', 'Rejected']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Pending'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    endDate: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::home-office-request.home-office-request'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    startDate: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    users_permissions_user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiPermissionEntryPermissionEntry
   extends Struct.CollectionTypeSchema {
   collectionName: 'permission_entries';
@@ -993,6 +1033,10 @@ export interface PluginUsersPermissionsUser
       'oneToMany',
       'api::home-office-location.home-office-location'
     >;
+    home_office_requests: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::home-office-request.home-office-request'
+    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1046,6 +1090,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::home-office-location.home-office-location': ApiHomeOfficeLocationHomeOfficeLocation;
+      'api::home-office-request.home-office-request': ApiHomeOfficeRequestHomeOfficeRequest;
       'api::permission-entry.permission-entry': ApiPermissionEntryPermissionEntry;
       'api::time-entry.time-entry': ApiTimeEntryTimeEntry;
       'api::vacation-entry.vacation-entry': ApiVacationEntryVacationEntry;
