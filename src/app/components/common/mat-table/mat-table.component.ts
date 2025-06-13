@@ -46,10 +46,9 @@ import { PermissionEntry } from '../../../models/permission-entry.model';
 export class MatTableComponent<T extends { status: string }> implements OnInit {
   permissionLeaveService = inject (PermissionLeaveService);
   
-
   @Input() entries: T[] = [];
   @Input() displayedColumns: string[] = [];
-  @Input() localStorageKey: string = 'defaultEntries'; // Unique key for each component
+  @Input() localStorageKey: string = '';
   @Output() entryDeleted = new EventEmitter<T>();
   startDate: Date | null = null;
   endDate: Date | null = null;
@@ -82,7 +81,6 @@ export class MatTableComponent<T extends { status: string }> implements OnInit {
     this.filteredData.paginator = this.paginator;
     this.filteredData.sort = this.sort;
   }
-
   filterEntriesByDate() {
     const currentData = [...this.entries];
 
@@ -144,17 +142,10 @@ export class MatTableComponent<T extends { status: string }> implements OnInit {
       this.filteredData.paginator = this.paginator;
       this.filteredData.sort = this.sort;
     } else {
-      this.loadFromLocalStorage();
+      this.updateDataSource();
     }
   }
-
-  loadFromLocalStorage() {
-    const storedEntries = localStorage.getItem(this.localStorageKey);
-    this.entries = storedEntries ? JSON.parse(storedEntries) : [];
-    this.filteredData.data = this.entries;
-    console.log('Entries loaded from local storage:', this.entries);
-  }
-
+  // Method removed: loadFromLocalStorage
   deleteEntry(entry: T) {
     const index = this.entries.findIndex((e) => e === entry);
     if (index > -1) {
@@ -163,37 +154,20 @@ export class MatTableComponent<T extends { status: string }> implements OnInit {
       this.entryDeleted.emit(entry);
     }
 
-    localStorage.setItem(this.localStorageKey, JSON.stringify(this.entries));
     console.log('Entries after deletion:', this.entries);
   }
-
   approveEntry(entry: T): void {
     const index = this.entries.findIndex((e) => e === entry);
     if (index > -1) {
       this.entries[index].status = 'Approved';
       this.filteredData.data = [...this.entries];
-  
-      // Determine which key to use for local storage
-      const storageKey = this.localStorageKey === 'vacationEntries' || this.localStorageKey === 'permissionEntries'
-        ? this.localStorageKey
-        : 'defaultEntries';
-  
-      localStorage.setItem(storageKey, JSON.stringify(this.entries));
     }
   }
-
   cancelEntry(entry: T): void {
     const index = this.entries.findIndex((e) => e === entry);
     if (index > -1) {
       this.entries[index].status = 'Cancelled';
       this.filteredData.data = [...this.entries];
-  
-      // Determine which key to use for local storage
-      const storageKey = this.localStorageKey === 'vacationEntries' || this.localStorageKey === 'permissionEntries'
-        ? this.localStorageKey
-        : 'defaultEntries';
-  
-      localStorage.setItem(storageKey, JSON.stringify(this.entries));
     }
   }
 
