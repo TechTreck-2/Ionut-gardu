@@ -80,11 +80,18 @@ export class HomeOfficeRequestComponent implements OnInit {
           this.loadEntries();
         }
       });
-  }
-  deleteEntry(entry: any) {
+  }  deleteEntry(entry: HomeOfficeRequestEntry) {
     if (confirm('Are you sure you want to delete this request?')) {
       this.loading = true;
-      this.homeOfficeRequestService.deleteEntry(entry.id)
+      const entryId = entry.id || (entry.documentId ? parseInt(entry.documentId) : undefined);
+      
+      if (!entryId) {
+        this.snackBar.open('Cannot delete: Missing entry ID', 'Close', { duration: 3000 });
+        this.loading = false;
+        return;
+      }
+      
+      this.homeOfficeRequestService.deleteEntry(entryId)
         .pipe(
           catchError(error => {
             console.error('Error deleting home office request:', error);
@@ -100,5 +107,62 @@ export class HomeOfficeRequestComponent implements OnInit {
           }
         });
     }
+  }
+  // Event handlers for mat-table events with documentId support
+  onEntryDeleted(entry: HomeOfficeRequestEntry): void {
+    console.log('Entry deleted with documentId:', entry.documentId);
+    // Use the entryId or documentId from Strapi for deletion
+    const entryId = entry.id || (entry.documentId ? parseInt(entry.documentId) : undefined);
+    if (entryId) {
+      this.deleteEntry({ ...entry, id: entryId });
+    } else {
+      console.error('Cannot delete entry without ID:', entry);
+      this.snackBar.open('Failed to delete: Missing entry ID', 'Close', { duration: 3000 });
+    }
+  }
+
+  onEntryApproved(entry: HomeOfficeRequestEntry): void {
+    console.log('Entry approved with documentId:', entry.documentId);
+    // Update the status to 'Approved' and save
+    const updatedEntry: HomeOfficeRequestEntry = { 
+      ...entry, 
+      status: 'Approved' as 'Approved'
+    };
+    const entryId = entry.id || (entry.documentId ? parseInt(entry.documentId) : undefined);
+    if (entryId) {
+      this.updateEntryStatus(entryId, updatedEntry);
+    }
+  }
+
+  onEntryCancelled(entry: HomeOfficeRequestEntry): void {
+    console.log('Entry cancelled with documentId:', entry.documentId);
+    // Update the status to 'Cancelled' and save
+    const updatedEntry: HomeOfficeRequestEntry = { 
+      ...entry, 
+      status: 'Rejected' as 'Rejected' // Using Rejected for Cancel since the model doesn't have 'Cancelled'
+    };
+    const entryId = entry.id || (entry.documentId ? parseInt(entry.documentId) : undefined);
+    if (entryId) {
+      this.updateEntryStatus(entryId, updatedEntry);
+    }
+  }
+
+  private updateEntryStatus(id: number, entry: HomeOfficeRequestEntry): void {
+    this.loading = true;
+    this.homeOfficeRequestService.updateEntry(id, entry)
+      .pipe(
+        catchError(error => {
+          console.error('Error updating entry status:', error);
+          this.snackBar.open('Failed to update status', 'Close', { duration: 3000 });
+          return of(null);
+        }),
+        finalize(() => this.loading = false)
+      )
+      .subscribe((result: any) => {
+        if (result) {
+          this.snackBar.open(`Request status updated to ${entry.status}`, 'Close', { duration: 2000 });
+          this.loadEntries();
+        }
+      });
   }
 }

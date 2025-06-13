@@ -11,11 +11,14 @@
       + Create Request
     </button>
   
-    <div class="shadow-container">
+  <div class="shadow-container">
       <app-mat-table
       [entries]="entries"
       [localStorageKey]="'permissionEntries'"
       [displayedColumns]="displayedColumns"
+      (entryDeleted)="onEntryDeleted($event)"
+      (entryApproved)="onEntryApproved($event)"
+      (entryCancelled)="onEntryCancelled($event)"
       ></app-mat-table>
     </div>
   </div>

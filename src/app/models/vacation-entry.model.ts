@@ -4,4 +4,6 @@ export interface VacationEntry {
     duration: number;
     reason: string;
     status: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+    id?: number;
+    documentId?: string;
   }

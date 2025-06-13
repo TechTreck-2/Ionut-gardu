@@ -23,10 +23,11 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
-import { PermissionLeaveService } from '../../services/permission-leave.service';
+import { PermissionService } from '../../services/permission-service';
 import { PermissionEntry } from '../../models/permission-entry.model';
 import { TimeEntry } from '../../models/time-entry.model';
 import { firstValueFrom } from 'rxjs';
+
 
 @Component({
   selector: 'app-time-table',
@@ -67,10 +68,9 @@ export class TimeTrackingComponent implements OnInit {
   startDate: Date | null = null;
   endDate: Date | null = null;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
-  timerService = inject(TimerService);
+  @ViewChild(MatSort) sort!: MatSort;  timerService = inject(TimerService);
   timeEntryService = inject(TimeEntryService);
-  permissionLeaveService = inject(PermissionLeaveService);
+  permissionService = inject(PermissionService);
   snackBar = inject(MatSnackBar);
   dialog = inject(MatDialog);
   
@@ -181,10 +181,9 @@ export class TimeTrackingComponent implements OnInit {
     this.endDate = null;
     this.filteredData = new MatTableDataSource(this.dataSource.data);
   }
-
   loadPermissionEntries(): void {
     //console.log('[TimeTrackingComponent] loadPermissionEntries called');
-    this.permissionEntries = this.permissionLeaveService.getPermissionEntries();
+    this.permissionEntries = this.permissionService.getPermissionEntries();
     //console.log('[TimeTrackingComponent] Permission entries loaded:', this.permissionEntries.length);
   }
   async loadVacationDays(): Promise<void> {
@@ -235,7 +234,7 @@ export class TimeTrackingComponent implements OnInit {
   
     let totalSeconds = 0;
     for (const permissionEntry of permissionEntries) {
-      const durationString = this.permissionLeaveService.calculateDuration(permissionEntry);
+      const durationString = this.permissionService.calculateDuration(permissionEntry);
       const [hours, minutes, seconds] = durationString.split(':').map(Number);
       totalSeconds += hours * 3600 + minutes * 60 + seconds;
     }
@@ -398,7 +397,7 @@ export class TimeTrackingComponent implements OnInit {
 
     if (permissionEntry) {
       //console.log('[TimeTrackingComponent] Found permission entry for date:', permissionEntry);
-      const permissionDuration = this.permissionLeaveService.calculateDuration(permissionEntry);
+      const permissionDuration = this.permissionService.calculateDuration(permissionEntry);
       const [permHours, permMinutes, permSeconds] = permissionDuration.split(':').map(Number);
       const permDurationInHours = permHours + permMinutes / 60 + permSeconds / 3600;
       diffInHours -= permDurationInHours;

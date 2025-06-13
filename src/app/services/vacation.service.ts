@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, catchError, map, switchMap, firstValueFrom } from 'rxjs';
+import { Observable, throwError, catchError, map, switchMap, firstValueFrom, tap } from 'rxjs';
 import { VacationEntry } from '../models/vacation-entry.model';
 import { environment } from '@env/environment';
 import { AuthService } from './auth.service';
@@ -91,25 +91,38 @@ export class VacationService {
     }
     
     const result: StrapiVacationEntry[] = [];
-    
-    for (const item of response.data) {
+      for (const item of response.data) {
       try {
+        // Log the entire item structure to identify where documentId is stored
+        //console.log('Raw Strapi item structure:', JSON.stringify(item, null, 2));
+        
         // Check if the item has the correct structure
         const attributes = item.attributes || item;
         
         // Handle the case when response structure changes
         if (!attributes.startDate || !attributes.endDate) {
-          console.log('Skipping invalid entry:', item);
+          //console.log('Skipping invalid entry:', item);
           continue;
         }
-        
-        const userId = attributes.users_permissions_user?.data?.id || 
+          const userId = attributes.users_permissions_user?.data?.id || 
                       attributes.users_permissions_user?.id || 
                       null;
+                      
+        // Enhanced logging for documentId handling
+        const itemId = item.id || (typeof item === 'object' ? item.id || 0 : 0);
+        // Look for documentId in multiple possible locations in the Strapi response structure
+        const rawDocumentId = item.documentId || 
+                              item.attributes?.documentId || 
+                              attributes.documentId;
+        const generatedDocumentId = itemId ? itemId.toString() : '';
+        // Use the raw documentId if available, otherwise fall back to the generated ID
+        const finalDocumentId = rawDocumentId || generatedDocumentId;
+        
+        
         
         const mappedEntry: StrapiVacationEntry = {
-          id: item.id || (typeof item === 'object' ? item.id || 0 : 0),
-          documentId: item.id ? item.id.toString() : (item.documentId || ''),
+          id: itemId,
+          documentId: finalDocumentId,
           startDate: attributes.startDate,
           endDate: attributes.endDate,
           duration: attributes.duration || 0,
@@ -140,8 +153,18 @@ export class VacationService {
       const approvalState = validStates.includes(strapiEntry.approvalState) 
         ? strapiEntry.approvalState as 'Pending' | 'Approved' | 'Rejected' | 'Cancelled'
         : 'Pending';
-        
+        // Enhanced logging for documentId handling in final mapping
+      const entryId = strapiEntry.id;
+      const entryDocumentId = strapiEntry.documentId;
+      const generatedDocumentId = strapiEntry.id ? strapiEntry.id.toString() : '';
+      // Always preserve the original documentId and only fall back to the ID if documentId is not available
+      const finalDocumentId = entryDocumentId || generatedDocumentId;
+      
+      
+      
       return {
+        id: strapiEntry.id,
+        documentId: finalDocumentId,
         startDate: new Date(strapiEntry.startDate),
         endDate: new Date(strapiEntry.endDate),
         duration: strapiEntry.duration || 0,
@@ -149,14 +172,15 @@ export class VacationService {
         status: approvalState
       };
     } catch (error) {
-      console.error('Error mapping vacation entry:', error, strapiEntry);
-      // Return a default entry to prevent crashes
+      console.error('Error mapping vacation entry:', error, strapiEntry);      // Return a default entry to prevent crashes
+      console.error('Returning default VacationEntry due to mapping error');
       return {
         startDate: new Date(),
         endDate: new Date(),
         duration: 0,
         reason: 'Error loading data',
-        status: 'Pending'
+        status: 'Pending',
+        documentId: 'error'
       };
     }
   }
@@ -175,10 +199,14 @@ export class VacationService {
       })
     );
   }  getVacationEntries(): Observable<VacationEntry[]> {
+    //console.log('Fetching vacation entries from API...');
     return this.http.get<StrapiResponse<any>>(`${this.apiUrl}?populate=*`).pipe(
       map(response => {
+        //console.log('Raw response from Strapi API:', response);
         try {
-          return this.mapStrapiResponse(response);
+          const mapped = this.mapStrapiResponse(response);
+          //console.log('Mapped Strapi response (intermediate format):', mapped);
+          return mapped;
         } catch (error) {
           console.error('Error mapping Strapi response:', error);
           return [];
@@ -214,9 +242,16 @@ export class VacationService {
       })
     );
   }
-
   async saveVacationEntry(entry: VacationEntry): Promise<void> {
     const userId = await firstValueFrom(this.getUserId());
+    
+    // Generate a unique documentId if needed
+    if (!entry.documentId) {
+      // Create a unique ID that's more than just a number
+      entry.documentId = 'vac_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+    }
+    
+    //console.log('Saving entry with documentId:', entry.documentId);
     
     const payload = {
       data: {
@@ -225,6 +260,7 @@ export class VacationService {
         duration: entry.duration,
         reason: entry.reason,
         approvalState: entry.status,
+        documentId: entry.documentId, // Explicitly include documentId
         users_permissions_user: userId
       }
     };
@@ -241,17 +277,72 @@ export class VacationService {
       throw error;
     }
   }
-
   async deleteVacationEntry(documentId: string): Promise<void> {
+    //console.log('Deleting vacation entry with documentId:', documentId);
     try {
       await firstValueFrom(
         this.http.delete<void>(`${this.apiUrl}/${documentId}`).pipe(
           catchError(this.handleError)
         )
       );
+      //console.log('Successfully deleted vacation entry with documentId:', documentId);
       await this.updateVacationDaysLeft();
     } catch (error) {
       console.error('Error deleting vacation entry:', error);
+      throw error;
+    }
+  }  async updateVacationEntry(entry: VacationEntry): Promise<void> {
+    if (!entry.id && !entry.documentId) {
+      console.error('Cannot update entry without id or documentId', entry);
+      throw new Error('Cannot update entry without id or documentId');
+    }
+    
+    // Use the original documentId from API if available
+    const documentId = entry.documentId || entry.id!.toString();
+    
+    console.log('Updating vacation entry with documentId:', documentId, 'Entry:', entry);
+    
+    const payload = {
+      data: {
+        startDate: entry.startDate.toISOString().split('T')[0],
+        endDate: entry.endDate.toISOString().split('T')[0],
+        duration: entry.duration,
+        reason: entry.reason,
+        approvalState: entry.status
+        // Removed documentId from payload as it causes "Invalid key documentId" error
+      }
+    };
+
+    try {
+      console.log('Vacation service - Request details:', {
+        url: `${this.apiUrl}/${documentId}`,
+        method: 'PUT',
+        payload: JSON.stringify(payload, null, 2),
+        documentIdType: typeof documentId
+      });
+      
+      // Add tap to log the successful response
+      await firstValueFrom(
+        this.http.put<StrapiResponse<any>>(`${this.apiUrl}/${documentId}`, payload).pipe(
+          tap(response => {
+            console.log('Vacation service - Successful response:', {
+              responseData: JSON.stringify(response, null, 2)
+            });
+          }),
+          catchError((error: HttpErrorResponse) => {
+            console.error('Vacation service - Detailed error:', {
+              status: error.status,
+              statusText: error.statusText,
+              url: error.url, 
+              errorBody: error.error ? JSON.stringify(error.error, null, 2) : 'No error body'
+            });
+            return this.handleError(error);
+          })
+        )
+      );
+      await this.updateVacationDaysLeft();
+    } catch (error) {
+      console.error('Error updating vacation entry:', error);
       throw error;
     }
   }

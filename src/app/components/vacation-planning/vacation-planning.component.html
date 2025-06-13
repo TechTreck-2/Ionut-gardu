@@ -13,13 +13,14 @@
   >
     + Create Request
   </button>
-
   <div class="shadow-container">
     <app-mat-table
       [entries]="entries"
       [displayedColumns]="displayedColumns"
       [localStorageKey]="'vacationEntries'"
-      (entryDeleted)="updateVacationDaysLeft()"
+      (entryDeleted)="onEntryDeleted($event)"
+      (entryApproved)="onEntryApproved($event)"
+      (entryCancelled)="onEntryCancelled($event)"
     ></app-mat-table>
   </div>
 </div>

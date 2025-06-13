@@ -3,7 +3,7 @@ import { BehaviorSubject, interval, Subscription, firstValueFrom } from 'rxjs';
 import { VacationService } from './vacation.service';
 import { VacationEntry } from '../models/vacation-entry.model';
 import { TimeEntry } from '../models/time-entry.model';
-import { PermissionLeaveService } from './permission-leave.service';
+import { PermissionService } from './permission-service';
 import { PermissionEntry } from '../models/permission-entry.model';
 import { TimeEntryService } from './time-entry.service';
 
@@ -19,18 +19,16 @@ export class TimerService {
   private clockOutTime: Date | null = null;
   private currentEntryId: string | null = null;
   vacationEntries: VacationEntry[] = [];
-  timeEntries: TimeEntry[] = [];
-  vacationService = inject(VacationService);
-  permissionLeaveService = inject(PermissionLeaveService);
+  timeEntries: TimeEntry[] = [];  vacationService = inject(VacationService);
+  permissionService = inject(PermissionService);
   timeEntryService = inject(TimeEntryService);
   permissionEntries: PermissionEntry[] = [];
 
   constructor() {
     this.loadState();
   }
-
   loadPermissionEntries(): void {
-    this.permissionEntries = this.permissionLeaveService.getPermissionEntries();
+    this.permissionEntries = this.permissionService.getPermissionEntries();
   }
 
   get runningStatus() {
@@ -263,11 +261,9 @@ export class TimerService {
     this.loadPermissionEntries();
     const permissionEntry = this.permissionEntries.find(
       (pe) => pe.date === formattedDate && pe.status === 'Approved'
-    );
-
-    if (permissionEntry) {
+    );    if (permissionEntry) {
       const permissionDuration =
-        this.permissionLeaveService.calculateDuration(permissionEntry);
+        this.permissionService.calculateDuration(permissionEntry);
       const [permHours, permMinutes, permSeconds] = permissionDuration
         .split(':')
         .map(Number);
