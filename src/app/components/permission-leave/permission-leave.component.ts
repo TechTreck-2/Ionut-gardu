@@ -16,15 +16,16 @@ import { Subscription } from 'rxjs';
   standalone: true,
   imports: [MatTableComponent, MatButtonModule, CommonModule],
 })
-export class PermissionLeaveComponent implements OnInit, OnDestroy {
-  entries: PermissionEntry[] = [];
+export class PermissionLeaveComponent implements OnInit, OnDestroy {  entries: PermissionEntry[] = [];
   isLoading = true;
   hasError = false;
-  displayedColumns: string[] = ['actions', 'date', 'startTime', 'endTime', 'leave-duration', 'status'];  permissionService = inject(PermissionService);
+  displayedColumns: string[] = ['actions', 'date', 'startTime', 'endTime', 'leave-duration', 'status'];
+  permissionService = inject(PermissionService);
   dialog = inject(MatDialog);
-  snackBar = inject(MatSnackBar);
-  private subscriptions = new Subscription();
-    ngOnInit(): void {    // Initialize with any existing entries (already filtered for current user by the API service)
+  snackBar = inject(MatSnackBar);  private subscriptions = new Subscription();
+  
+  ngOnInit(): void {
+    // Initialize with any existing entries (already filtered for current user by the API service)
     this.entries = this.permissionService.getPermissionEntries();
     
     // Subscribe to future updates (only entries for the logged-in user will be received)
@@ -64,10 +65,11 @@ export class PermissionLeaveComponent implements OnInit, OnDestroy {
           endTime: result.endTime,     // Ensure this is in "HH:mm" format
           status: 'Pending',
         };
-        this.saveEntry(newEntry);
-      }
+        this.saveEntry(newEntry);      }
     });
-  }  saveEntry(entry: PermissionEntry) {
+  }
+  
+  saveEntry(entry: PermissionEntry) {
     this.subscriptions.add(
       this.permissionService.savePermissionEntry(entry).subscribe({
         next: () => this.snackBar.open('Entry saved successfully', 'Close', { duration: 2000 }),
@@ -78,7 +80,6 @@ export class PermissionLeaveComponent implements OnInit, OnDestroy {
       })
     );
   }
-
   deleteEntry(entry: PermissionEntry) {
     this.subscriptions.add(
       this.permissionService.deletePermissionEntry(entry).subscribe({
@@ -90,14 +91,29 @@ export class PermissionLeaveComponent implements OnInit, OnDestroy {
       })
     );
   }
+  
   // Event handlers for mat-table events
   onEntryDeleted(entry: PermissionEntry): void {
     console.log('Entry deleted with documentId:', entry.documentId);
+    
+    // Make sure the entry has a valid documentId
+    if (!entry.documentId && entry.id) {
+      entry.documentId = entry.id.toString();
+      console.log('Generated documentId from ID:', entry.documentId);
+    }
+    
     // Use the documentId from Strapi for deletion
     this.deleteEntry(entry);
-  }  onEntryApproved(entry: PermissionEntry): void {
+  }
+    onEntryApproved(entry: PermissionEntry): void {
     console.log('Entry approved with ID:', entry.id, 'and documentId:', entry.documentId);
-    // We don't need to change the entry object, as our service will handle the ID extraction properly
+    
+    // Make sure the entry has a valid documentId
+    if (!entry.documentId && entry.id) {
+      entry.documentId = entry.id.toString();
+      console.log('Generated documentId from ID:', entry.documentId);
+    }
+    
     this.permissionService.approvePermissionEntry(entry).subscribe({
       next: () => this.snackBar.open('Entry approved successfully', 'Close', { duration: 2000 }),
       error: (error: Error) => {
@@ -106,15 +122,21 @@ export class PermissionLeaveComponent implements OnInit, OnDestroy {
       }
     });
   }
-
+  
   onEntryCancelled(entry: PermissionEntry): void {
     console.log('Entry cancelled with ID:', entry.id, 'and documentId:', entry.documentId);
-    // We don't need to change the entry object, as our service will handle the ID extraction properly
+    
+    // Make sure the entry has a valid documentId
+    if (!entry.documentId && entry.id) {
+      entry.documentId = entry.id.toString();
+      console.log('Generated documentId from ID:', entry.documentId);
+    }
+    
     this.permissionService.cancelPermissionEntry(entry).subscribe({
-      next: () => this.snackBar.open('Entry cancelled successfully', 'Close', { duration: 2000 }),
+      next: () => this.snackBar.open('Entry rejected successfully', 'Close', { duration: 2000 }),
       error: (error: Error) => {
-        console.error('Error cancelling entry:', error);
-        this.snackBar.open('Failed to cancel entry', 'Close', { duration: 2000 });
+        console.error('Error rejecting entry:', error);
+        this.snackBar.open('Failed to reject entry', 'Close', { duration: 2000 });
       }
     });
   }
