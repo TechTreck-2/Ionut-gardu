@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:1337' // Strapi server URL - confirm this is correct
+  apiUrl: 'https://original-confidence-3dca84174e.strapiapp.com' // Strapi server URL - confirm this is correct
 };

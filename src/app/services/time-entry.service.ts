@@ -64,14 +64,14 @@ export class TimeEntryService {
   }
 
   private mapStrapiResponse(response: StrapiResponse<any>): StrapiTimeEntry[] {
-    //console.log('Mapping Strapi response:', JSON.stringify(response, null, 2));
+    ////console.log('Mapping Strapi response:', JSON.stringify(response, null, 2));
     if (!response.data || !Array.isArray(response.data)) {
       console.error('Invalid response structure:', response);
       return [];
     }
     
     return response.data.map(item => {
-      //console.log('Mapping item:', JSON.stringify(item, null, 2));
+      ////console.log('Mapping item:', JSON.stringify(item, null, 2));
       
       const mappedEntry: StrapiTimeEntry = {
         id: item.id,
@@ -82,7 +82,7 @@ export class TimeEntryService {
         users_permissions_user: item.users_permissions_user
       };
       
-      //console.log('Mapped entry:', mappedEntry);
+      ////console.log('Mapped entry:', mappedEntry);
       return mappedEntry;
     });
   }
@@ -90,7 +90,7 @@ export class TimeEntryService {
   private getUserId(): Observable<number> {
     return this.authService.getCurrentUserId().pipe(
       filter((id): id is number => id !== null),
-      //tap(userId => console.log('Time Entry Service - User ID received:', userId)),
+      //tap(userId => //console.log('Time Entry Service - User ID received:', userId)),
       catchError(error => {
         console.error('Time Entry Service - Error getting user ID:', error);
         return throwError(() => new Error('User not authenticated'));
@@ -99,9 +99,9 @@ export class TimeEntryService {
   }
 
   getTimeEntries(): Observable<StrapiTimeEntry[]> {
-    //console.log('Time Entry Service - Fetching all time entries');
+    ////console.log('Time Entry Service - Fetching all time entries');
     return this.http.get<StrapiResponse<any>>(`${this.apiUrl}?populate=*`).pipe(
-      //tap(response => console.log('Time Entry Service - Raw response:', JSON.stringify(response, null, 2))),
+      //tap(response => //console.log('Time Entry Service - Raw response:', JSON.stringify(response, null, 2))),
       map(response => this.mapStrapiResponse(response)),
       switchMap(entries => {
         return this.getUserId().pipe(
@@ -118,7 +118,7 @@ export class TimeEntryService {
   }
 
   getTimeEntry(documentId: string): Observable<StrapiTimeEntry> {
-    console.log('Time Entry Service - Fetching time entry:', documentId);
+    //console.log('Time Entry Service - Fetching time entry:', documentId);
     return this.http.get<{ data: { id: number; attributes: any } }>(`${this.apiUrl}/${documentId}?populate=*`).pipe(
       map(response => ({
         id: response.data.id,
@@ -130,10 +130,6 @@ export class TimeEntryService {
   }
 
   createTimeEntry(timeEntry: Partial<TimeEntry>): Observable<StrapiTimeEntry> {
-    console.log('Time Entry Service - Creating time entry:', {
-      timeEntry,
-      isAuthenticated: this.authService.isAuthenticated()
-    });
 
     return this.getUserId().pipe(
       switchMap(userId => {
@@ -147,12 +143,12 @@ export class TimeEntryService {
           }
         };
 
-        console.log('Time Entry Service - Request payload:', JSON.stringify(payload, null, 2));
-        console.log('Time Entry Service - Request URL:', `${this.apiUrl}?populate=*`);
+        //console.log('Time Entry Service - Request payload:', JSON.stringify(payload, null, 2));
+        //console.log('Time Entry Service - Request URL:', `${this.apiUrl}?populate=*`);
         
         return this.http.post<{ data: { id: number; documentId: string; attributes: any } }>(`${this.apiUrl}?populate=*`, payload).pipe(
           map(response => {
-            console.log('Time Entry Service - Create response:', JSON.stringify(response, null, 2));
+            //console.log('Time Entry Service - Create response:', JSON.stringify(response, null, 2));
             return {
               id: response.data.id,
               documentId: response.data.documentId,
@@ -169,7 +165,7 @@ export class TimeEntryService {
   }
 
   updateTimeEntry(documentId: string, timeEntry: Partial<TimeEntry>): Observable<StrapiTimeEntry> {
-    console.log('Time Entry Service - Updating time entry:', { documentId, timeEntry });
+    ////console.log('Time Entry Service - Updating time entry:', { documentId, timeEntry });
     return this.getUserId().pipe(
       switchMap(userId => {
         const { date, clockInTime, clockOutTime } = timeEntry;
@@ -194,17 +190,17 @@ export class TimeEntryService {
   }
 
   deleteTimeEntry(documentId: string): Observable<void> {
-    console.log('Time Entry Service - Deleting time entry:', documentId);
+    //console.log('Time Entry Service - Deleting time entry:', documentId);
     return this.http.delete<void>(`${this.apiUrl}/${documentId}`).pipe(
       catchError(this.handleError)
     );
   }
 
   getTimeEntryByDate(date: string): Observable<StrapiTimeEntry[]> {
-    //console.log('Time Entry Service - Fetching time entries for date:', date);
+    ////console.log('Time Entry Service - Fetching time entries for date:', date);
     return this.http.get<StrapiResponse<any>>(`${this.apiUrl}?populate=*`).pipe(
       switchMap(response => {
-        //console.log('Time Entry Service - Raw response:', response);
+        ////console.log('Time Entry Service - Raw response:', response);
         const entries = this.mapStrapiResponse(response);
         return this.getUserId().pipe(
           map(userId => entries.filter(entry => 

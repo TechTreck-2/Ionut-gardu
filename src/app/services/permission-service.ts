@@ -7,6 +7,7 @@ import {
   StrapiPermissionEntryResponse 
 } from '../models/permission-entry.model';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 /**
  * Unified Permission Service
@@ -19,7 +20,7 @@ import { AuthService } from './auth.service';
 })
 export class PermissionService {
   // API configuration
-  private apiUrl = 'http://localhost:1337/api/permission-entries';
+  private apiUrl = `${environment.apiUrl}/api/permission-entries`;
   
   // For reactive state management
   private entriesSubject = new BehaviorSubject<PermissionEntry[]>([]);

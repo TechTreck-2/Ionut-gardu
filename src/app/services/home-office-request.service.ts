@@ -21,7 +21,7 @@ export class HomeOfficeRequestService {
     return this.authService.getCurrentUserId().pipe(
       switchMap(userId => {        return this.http.get<any>(`${this.apiUrl}?filters[users_permissions_user][id][$eq]=${userId}&populate=*`)
           .pipe(            map((response: any) => {
-              //console.log('🔍 Raw Strapi API Response:', JSON.stringify(response, null, 2));
+              //console.log(' Raw Strapi API Response:', JSON.stringify(response, null, 2));
               
               // Handle case where response format is different than expected
               if (!response || !response.data) {
@@ -83,19 +83,19 @@ export class HomeOfficeRequestService {
       }
     };
     
-    //console.log('📤 Sending to Strapi (UPDATE) with documentId:', documentId, JSON.stringify(requestData, null, 2));
+    //console.log(' Sending to Strapi (UPDATE) with documentId:', documentId, JSON.stringify(requestData, null, 2));
     return this.http.put<any>(`${this.apiUrl}/${documentId}`, requestData).pipe(
       map(response => {
-        //console.log('📥 Raw Strapi UPDATE Response:', JSON.stringify(response, null, 2));
+        //console.log(' Raw Strapi UPDATE Response:', JSON.stringify(response, null, 2));
         return response;
       })
     );
   }  // Delete a home office request
   deleteEntry(documentId: string): Observable<any> {
-    //console.log('📤 Sending DELETE request to Strapi for documentId:', documentId);
+    //console.log(' Sending DELETE request to Strapi for documentId:', documentId);
     return this.http.delete<any>(`${this.apiUrl}/${documentId}`).pipe(
       map(response => {
-        //console.log('📥 Raw Strapi DELETE Response:', JSON.stringify(response, null, 2));
+        //console.log(' Raw Strapi DELETE Response:', JSON.stringify(response, null, 2));
         return response;
       })
     );

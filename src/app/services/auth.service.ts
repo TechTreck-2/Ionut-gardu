@@ -3,12 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, catchError, of, switchMap, map } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://localhost:1337/api';
+  private readonly API_URL = `${environment.apiUrl}/api`;
   private currentUserSubject = new BehaviorSubject<any>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
   private platformId = inject(PLATFORM_ID);
@@ -38,7 +39,7 @@ export class AuthService {
   }
 
   login(identifier: string, password: string): Observable<any> {
-    console.log('Auth Service - Attempting login for:', identifier);
+    //console.log('Auth Service - Attempting login for:', identifier);
     return this.http.post(`${this.API_URL}/auth/local`, {
       identifier,
       password
