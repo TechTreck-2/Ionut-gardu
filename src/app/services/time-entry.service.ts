@@ -100,14 +100,12 @@ export class TimeEntryService {
 
   getTimeEntries(): Observable<StrapiTimeEntry[]> {
     ////console.log('Time Entry Service - Fetching all time entries');
-    return this.http.get<StrapiResponse<any>>(`${this.apiUrl}?populate=*`).pipe(
-      //tap(response => //console.log('Time Entry Service - Raw response:', JSON.stringify(response, null, 2))),
-      map(response => this.mapStrapiResponse(response)),
-      switchMap(entries => {
-        return this.getUserId().pipe(
-          map(userId => entries.filter(entry => 
-            entry.users_permissions_user?.id === userId
-          ))
+    return this.getUserId().pipe(
+      switchMap(userId => {
+        const url = `${this.apiUrl}?filters[users_permissions_user][id][$eq]=${userId}&populate=users_permissions_user`;
+        return this.http.get<StrapiResponse<any>>(url).pipe(
+          //tap(response => //console.log('Time Entry Service - Raw response:', JSON.stringify(response, null, 2))),
+          map(response => this.mapStrapiResponse(response))
         );
       }),
       catchError(error => {
@@ -119,12 +117,17 @@ export class TimeEntryService {
 
   getTimeEntry(documentId: string): Observable<StrapiTimeEntry> {
     //console.log('Time Entry Service - Fetching time entry:', documentId);
-    return this.http.get<{ data: { id: number; attributes: any } }>(`${this.apiUrl}/${documentId}?populate=*`).pipe(
-      map(response => ({
-        id: response.data.id,
-        documentId,
-        ...response.data.attributes
-      })),
+    return this.getUserId().pipe(
+      switchMap(userId => {
+        const url = `${this.apiUrl}/${documentId}?filters[users_permissions_user][id][$eq]=${userId}&populate=users_permissions_user`;
+        return this.http.get<{ data: { id: number; attributes: any } }>(url).pipe(
+          map(response => ({
+            id: response.data.id,
+            documentId,
+            ...response.data.attributes
+          }))
+        );
+      }),
       catchError(this.handleError)
     );
   }
@@ -144,9 +147,9 @@ export class TimeEntryService {
         };
 
         //console.log('Time Entry Service - Request payload:', JSON.stringify(payload, null, 2));
-        //console.log('Time Entry Service - Request URL:', `${this.apiUrl}?populate=*`);
+        //console.log('Time Entry Service - Request URL:', `${this.apiUrl}?populate=users_permissions_user`);
         
-        return this.http.post<{ data: { id: number; documentId: string; attributes: any } }>(`${this.apiUrl}?populate=*`, payload).pipe(
+        return this.http.post<{ data: { id: number; documentId: string; attributes: any } }>(`${this.apiUrl}?populate=users_permissions_user`, payload).pipe(
           map(response => {
             //console.log('Time Entry Service - Create response:', JSON.stringify(response, null, 2));
             return {
@@ -177,7 +180,7 @@ export class TimeEntryService {
             users_permissions_user: userId
           }
         };
-        return this.http.put<{ data: { id: number; documentId: string; attributes: any } }>(`${this.apiUrl}/${documentId}`, payload).pipe(
+        return this.http.put<{ data: { id: number; documentId: string; attributes: any } }>(`${this.apiUrl}/${documentId}?populate=users_permissions_user`, payload).pipe(
           map(response => ({
             id: response.data.id,
             documentId: response.data.documentId,
@@ -198,15 +201,12 @@ export class TimeEntryService {
 
   getTimeEntryByDate(date: string): Observable<StrapiTimeEntry[]> {
     ////console.log('Time Entry Service - Fetching time entries for date:', date);
-    return this.http.get<StrapiResponse<any>>(`${this.apiUrl}?populate=*`).pipe(
-      switchMap(response => {
-        ////console.log('Time Entry Service - Raw response:', response);
-        const entries = this.mapStrapiResponse(response);
-        return this.getUserId().pipe(
-          map(userId => entries.filter(entry => 
-            entry.date === date && 
-            entry.users_permissions_user?.id === userId
-          ))
+    return this.getUserId().pipe(
+      switchMap(userId => {
+        const url = `${this.apiUrl}?filters[users_permissions_user][id][$eq]=${userId}&filters[date][$eq]=${date}&populate=users_permissions_user`;
+        return this.http.get<StrapiResponse<any>>(url).pipe(
+          ////console.log('Time Entry Service - Raw response:', response);
+          map(response => this.mapStrapiResponse(response))
         );
       }),
       catchError(this.handleError)

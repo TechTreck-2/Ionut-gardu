@@ -200,34 +200,18 @@ export class VacationService {
     );
   }  getVacationEntries(): Observable<VacationEntry[]> {
     //console.log('Fetching vacation entries from API...');
-    return this.http.get<StrapiResponse<any>>(`${this.apiUrl}?populate=*`).pipe(
-      map(response => {
-        //console.log('Raw response from Strapi API:', response);
-        try {
-          const mapped = this.mapStrapiResponse(response);
-          //console.log('Mapped Strapi response (intermediate format):', mapped);
-          return mapped;
-        } catch (error) {
-          console.error('Error mapping Strapi response:', error);
-          return [];
-        }
-      }),
-      switchMap(entries => {
-        if (entries.length === 0) {
-          return new Observable<VacationEntry[]>(observer => {
-            observer.next([]);
-            observer.complete();
-          });
-        }
-        
-        return this.getUserId().pipe(
-          map(userId => {
+    return this.getUserId().pipe(
+      switchMap(userId => {
+        const url = `${this.apiUrl}?filters[users_permissions_user][id][$eq]=${userId}&populate=users_permissions_user`;
+        return this.http.get<StrapiResponse<any>>(url).pipe(
+          map(response => {
+            //console.log('Raw response from Strapi API:', response);
             try {
-              return entries
-                .filter(entry => entry.users_permissions_user?.id === userId)
-                .map(entry => this.mapToVacationEntry(entry));
+              const mapped = this.mapStrapiResponse(response);
+              //console.log('Mapped Strapi response (intermediate format):', mapped);
+              return mapped.map(entry => this.mapToVacationEntry(entry));
             } catch (error) {
-              console.error('Error filtering/mapping entries:', error);
+              console.error('Error mapping Strapi response:', error);
               return [];
             }
           })
@@ -263,11 +247,9 @@ export class VacationService {
         documentId: entry.documentId, // Explicitly include documentId
         users_permissions_user: userId
       }
-    };
-
-    try {
+    };    try {
       await firstValueFrom(
-        this.http.post<StrapiResponse<any>>(`${this.apiUrl}`, payload).pipe(
+        this.http.post<StrapiResponse<any>>(`${this.apiUrl}?populate=users_permissions_user`, payload).pipe(
           catchError(this.handleError)
         )
       );
@@ -320,10 +302,9 @@ export class VacationService {
         payload: JSON.stringify(payload, null, 2),
         documentIdType: typeof documentId
       });
-      
-      // Add tap to log the successful response
+        // Add tap to log the successful response
       await firstValueFrom(
-        this.http.put<StrapiResponse<any>>(`${this.apiUrl}/${documentId}`, payload).pipe(
+        this.http.put<StrapiResponse<any>>(`${this.apiUrl}/${documentId}?populate=users_permissions_user`, payload).pipe(
           tap(response => {
             console.log('Vacation service - Successful response:', {
               responseData: JSON.stringify(response, null, 2)
