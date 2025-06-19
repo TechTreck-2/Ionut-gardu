@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatTableComponent } from './mat-table.component'; // Adjust the import based on your setup
 import { MatTableDataSource } from '@angular/material/table';
-import { PermissionService } from '../../../services/permission-service'; // Adjust the import based on your setup
+import { PermissionService } from '../../../services/permission.service'; // Adjust the import based on your setup
 
 // Define the interface for the generic type
 interface PermissionEntry {

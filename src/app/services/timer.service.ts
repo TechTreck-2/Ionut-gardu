@@ -3,7 +3,7 @@ import { BehaviorSubject, interval, Subscription, firstValueFrom } from 'rxjs';
 import { VacationService } from './vacation.service';
 import { VacationEntry } from '../models/vacation-entry.model';
 import { TimeEntry } from '../models/time-entry.model';
-import { PermissionService } from './permission-service';
+import { PermissionService } from './permission.service';
 import { PermissionEntry } from '../models/permission-entry.model';
 import { TimeEntryService } from './time-entry.service';
 

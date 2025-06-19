@@ -4,7 +4,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableComponent } from '../common/mat-table/mat-table.component';
 import { MatButtonModule } from '@angular/material/button';
 import { PermissionEntry } from '../../models/permission-entry.model';
-import { PermissionService } from '../../services/permission-service';
+import { PermissionService } from '../../services/permission.service';
 import { CommonModule } from '@angular/common';
 import { PermissionEntryDialogComponent } from '../permission-entry-dialog/permission-entry-dialog.component';
 import { Subscription } from 'rxjs';

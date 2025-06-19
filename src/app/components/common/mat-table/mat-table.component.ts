@@ -21,7 +21,7 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
-import { PermissionService } from '../../../services/permission-service';
+import { PermissionService } from '../../../services/permission.service';
 import { VacationService } from '../../../services/vacation.service';
 import { VacationEntry } from '../../../models/vacation-entry.model'; 
 import { PermissionEntry } from '../../../models/permission-entry.model'; 
