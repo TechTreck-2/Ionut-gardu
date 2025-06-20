@@ -159,9 +159,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
         if (this.error?.field) {
           this.clearFieldError();
         }
-      });
-
-    // Password strength monitoring
+      });    // Password strength monitoring
     this.registerForm.get('password')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(password => {
@@ -170,19 +168,13 @@ export class RegisterComponent implements OnInit, OnDestroy {
         // Trigger validation on confirm password when password changes
         const confirmPasswordControl = this.registerForm.get('confirmPassword');
         if (confirmPasswordControl?.value) {
-          confirmPasswordControl.updateValueAndValidity();
+          // Use updateValueAndValidity with emitEvent: false to prevent infinite loops
+          confirmPasswordControl.updateValueAndValidity({ emitEvent: false });
         }
       });
 
-    // Trigger validation on confirm password when it changes
-    this.registerForm.get('confirmPassword')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        const confirmPasswordControl = this.registerForm.get('confirmPassword');
-        if (confirmPasswordControl) {
-          confirmPasswordControl.updateValueAndValidity();
-        }
-      });
+    // Remove the problematic confirmPassword valueChanges subscription
+    // that was causing infinite loops
   }
 
   // Custom validators
