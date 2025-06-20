@@ -13,7 +13,7 @@
 .login-card {
   width: 100%;
   max-width: 400px;
-  padding: 32px;
+  padding: 24px;
   border-radius: 8px;
   box-shadow: 0 1px 22px #0000001a;
   background-color: var(--mat-sys-surface);
@@ -42,7 +42,7 @@ mat-card-subtitle {
 form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .full-width {
@@ -56,18 +56,40 @@ mat-form-field {
 }
 
 mat-form-field.mat-mdc-form-field {
-  --mdc-outlined-text-field-container-height: 56px;
+  --mdc-outlined-text-field-container-height: 48px;
   --mdc-outlined-text-field-focus-outline-color: var(--mat-sys-primary);
   --mdc-outlined-text-field-hover-outline-color: var(--mat-sys-primary);
   --mdc-outlined-text-field-outline-color: var(--mat-sys-outline);
+  --mdc-outlined-text-field-focus-outline-width: 1px;
 }
 
 /* Input Field Styling */
 input[matInput] {
-  font-size: 1rem;
-  padding: 16px;
+  font-size: 0.875rem;
+  padding: 0;
   color: var(--mat-sys-on-surface);
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Remove focus outline from Material Design inputs */
+input[matInput]:focus,
+input[matInput]:focus-visible,
+.mat-mdc-input-element:focus,
+.mat-mdc-input-element:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Fix focus outline to stay within container */
+mat-form-field.mat-mdc-form-field .mdc-notched-outline {
+  border-radius: 4px;
+}
+
+mat-form-field.mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+mat-form-field.mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+mat-form-field.mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+  border-width: 1px !important;
+  border-color: var(--mat-sys-primary) !important;
 }
 
 /* Icon Styling */
@@ -277,8 +299,8 @@ mat-spinner {
   }
 }
 
-/* Focus visible for better accessibility */
-.login-button:focus-visible {
+/* Focus styles for better accessibility */
+.login-button:focus {
   outline: 2px solid var(--mat-sys-primary);
   outline-offset: 2px;
 }

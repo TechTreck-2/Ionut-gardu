@@ -1,6 +1,6 @@
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, catchError, of, switchMap, map } from 'rxjs';
+import { BehaviorSubject, Observable, tap, catchError, of, switchMap, map, throwError } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
@@ -52,18 +52,22 @@ export class AuthService {
         });
       })
     );
-  }
-  register(username: string, email: string, password: string): Observable<any> {
-    return this.http.post(`${this.API_URL}/auth/local/register`, {
-      username,
-      email,
-      password
-    }).pipe(
+  }  register(username: string, email: string, password: string): Observable<any> {
+    const payload = { username, email, password };
+    console.log('AuthService - Registration payload:', { username, email, password: '***' });
+    
+    return this.http.post(`${this.API_URL}/auth/local/register`, payload).pipe(
       tap((response: any) => {
+        console.log('AuthService - Registration successful:', response);
         if (this.isLocalStorageAvailable()) {
           localStorage.setItem('jwt', response.jwt);
         }
         this.currentUserSubject.next(response.user);
+      }),      catchError(error => {
+        console.error('AuthService - Registration error:', error);
+        console.error('AuthService - Error status:', error.status);
+        console.error('AuthService - Error response:', error.error);
+        return throwError(() => error);
       }),
       switchMap(() => this.getCurrentUser())
     );
