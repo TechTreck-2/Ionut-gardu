@@ -59,17 +59,20 @@ export class AuthService {
     return this.http.post(`${this.API_URL}/auth/local/register`, payload).pipe(
       tap((response: any) => {
         console.log('AuthService - Registration successful:', response);
+        // Don't automatically log in the user after registration
+        // Clear any existing authentication state to ensure clean login
         if (this.isLocalStorageAvailable()) {
-          localStorage.setItem('jwt', response.jwt);
+          localStorage.removeItem('jwt');
         }
-        this.currentUserSubject.next(response.user);
-      }),      catchError(error => {
+        this.currentUserSubject.next(null);
+      }),
+      catchError(error => {
         console.error('AuthService - Registration error:', error);
         console.error('AuthService - Error status:', error.status);
         console.error('AuthService - Error response:', error.error);
         return throwError(() => error);
-      }),
-      switchMap(() => this.getCurrentUser())
+      })
+      // Remove the switchMap that automatically fetches current user
     );
   }
   logout() {

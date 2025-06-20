@@ -20,7 +20,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Subject, takeUntil, finalize, take } from 'rxjs';
+import { Subject, takeUntil, finalize } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 // Interfaces for better type safety
@@ -91,32 +91,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
   ) {
     this.initializeForm();
   }
-
   ngOnInit(): void {
-    // Clear any existing authentication state and redirect if already authenticated
-    if (this.authService.isAuthenticated()) {
-      // Check if user data is available
-      this.authService.currentUser$.pipe(take(1)).subscribe(user => {
-        if (user) {
-          this.router.navigate(['/']);
-        } else {
-          // If token exists but no user data, fetch it
-          this.authService.getCurrentUser().subscribe({
-            next: (fetchedUser) => {
-              if (fetchedUser) {
-                this.router.navigate(['/']);
-              }
-            },
-            error: () => {
-              // If fetching user fails, clear auth state
-              this.authService.logout();
-            }
-          });
-        }
-      });
-      return;
-    }
-
+    // Remove the authentication check since we want to allow registration
+    // regardless of any existing tokens that might be invalid
+    
     // Focus username field on component load (only in browser)
     if (isPlatformBrowser(this.platformId)) {
       setTimeout(() => {
@@ -526,25 +504,24 @@ export class RegisterComponent implements OnInit, OnDestroy {
           this.registerForm.enable();
         })
       )
-      .subscribe({
-        next: () => {
+      .subscribe({        next: () => {
           console.log('Registration successful');
           
-          this.snackBar.open('Registration successful! Welcome aboard!', 'Close', {
-            duration: 3000,
+          this.snackBar.open('Registration successful! Please log in to continue.', 'Close', {
+            duration: 4000,
             panelClass: ['success-snackbar']
           });
           
           // Reset registration attempts on success
           this.registrationAttempts = 0;
           
-          // Use setTimeout to ensure authentication state is properly set before navigation
+          // Navigate to login page after successful registration
           setTimeout(() => {
-            this.router.navigate(['/']).then(success => {
+            this.router.navigate(['/login']).then(success => {
               if (!success) {
                 console.error('Navigation failed, trying alternative route');
                 // Fallback navigation
-                window.location.href = '/';
+                window.location.href = '/login';
               }
             });
           }, 100);
