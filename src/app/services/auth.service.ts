@@ -15,13 +15,11 @@ export class AuthService {
   private platformId = inject(PLATFORM_ID);
   private router = inject(Router);
   private initialized = false;
-
   constructor(private http: HttpClient) {
     if (this.isLocalStorageAvailable()) {
       const token = localStorage.getItem('jwt');
-      //console.log('Auth Service - Initial token check:', !!token);
       if (token) {
-        //console.log('Auth Service - Token found, will fetch user when needed');
+        // Token found, user will be fetched when needed
       }
     }
   }
@@ -36,34 +34,32 @@ export class AuthService {
       return this.getCurrentUser();
     }
     return of(null);
-  }
-
-  login(identifier: string, password: string): Observable<any> {
-    //console.log('Auth Service - Attempting login for:', identifier);
+  }  login(identifier: string, password: string): Observable<any> {
     return this.http.post(`${this.API_URL}/auth/local`, {
       identifier,
       password
     }).pipe(
       tap((response: any) => {
-        //console.log('Auth Service - Login successful, storing token');
         if (this.isLocalStorageAvailable()) {
           localStorage.setItem('jwt', response.jwt);
         }
         this.currentUserSubject.next(response.user);
-      }),
-      switchMap(() => this.getCurrentUser())
+        
+        // Fetch current user data asynchronously without blocking the login completion
+        this.getCurrentUser().subscribe({
+          next: (user) => {},
+          error: (error) => console.error('Auth Service - Error refreshing user data:', error)
+        });
+      })
     );
   }
-
   register(username: string, email: string, password: string): Observable<any> {
-    //console.log('Auth Service - Attempting registration for:', username);
     return this.http.post(`${this.API_URL}/auth/local/register`, {
       username,
       email,
       password
     }).pipe(
       tap((response: any) => {
-        //console.log('Auth Service - Registration successful, storing token');
         if (this.isLocalStorageAvailable()) {
           localStorage.setItem('jwt', response.jwt);
         }
@@ -72,25 +68,18 @@ export class AuthService {
       switchMap(() => this.getCurrentUser())
     );
   }
-
   logout() {
-    //console.log('Auth Service - Logging out');
     if (this.isLocalStorageAvailable()) {
       localStorage.removeItem('jwt');
     }
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
-  }
-
-  getCurrentUser(): Observable<any> {
-    //console.log('Auth Service - Fetching current user');
+  }getCurrentUser(): Observable<any> {
     return this.http.get(`${this.API_URL}/users/me`).pipe(
       tap(user => {
-        //console.log('Auth Service - Current user fetched:', user);
         this.currentUserSubject.next(user);
       }),
       catchError(error => {
-        //console.error('Auth Service - Error fetching current user:', error);
         if (error.status === 403) {
           this.logout();
         }
@@ -98,41 +87,29 @@ export class AuthService {
       })
     );
   }
-
   getCurrentUserId(): Observable<number> {
-    //console.log('Auth Service - Getting current user ID');
     return this.initializeUserIfNeeded().pipe(
       switchMap(() => {
         const user = this.currentUserSubject.value;
         
         if (user?.id) {
-          //console.log('Auth Service - User ID found:', user.id);
           return of(user.id);
         }
 
-        //console.log('Auth Service - No user ID found, fetching user data');
         return this.getCurrentUser().pipe(
           map(user => {
             if (!user?.id) {
               throw new Error('User not authenticated');
             }
-            //console.log('Auth Service - User ID fetched:', user.id);
             return user.id;
           })
         );
       })
     );
   }
-
   getToken(): string | null {
-    const token = this.isLocalStorageAvailable() ? localStorage.getItem('jwt') : null;
-    //console.log('Auth Service - Getting token:', !!token);
-    return token;
-  }
-
-  isAuthenticated(): boolean {
-    const isAuth = !!this.getToken();
-    //console.log('Auth Service - Checking authentication:', isAuth);
-    return isAuth;
+    return this.isLocalStorageAvailable() ? localStorage.getItem('jwt') : null;
+  }isAuthenticated(): boolean {
+    return !!this.getToken();
   }
 }
