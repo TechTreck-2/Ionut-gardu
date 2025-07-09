@@ -119,7 +119,7 @@ export class TimeEntryService {
     //console.log('Time Entry Service - Fetching time entry:', documentId);
     return this.getUserId().pipe(
       switchMap(userId => {
-        const url = `${this.apiUrl}/${documentId}?filters[users_permissions_user][id][$eq]=${userId}&populate=users_permissions_user`;
+        const url = `${this.apiUrl}/${documentId}?populate=users_permissions_user`;
         return this.http.get<{ data: { id: number; attributes: any } }>(url).pipe(
           map(response => ({
             id: response.data.id,
