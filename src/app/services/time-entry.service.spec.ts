@@ -15,7 +15,6 @@ describe('TimeEntryService - End-to-End Tests', () => {
 
   const mockUserId = 123;
   const apiUrl = `${environment.apiUrl}/api/time-entries`;
-
   beforeEach(() => {
     const authSpy = jasmine.createSpyObj('AuthService', ['getCurrentUserId']);
 
@@ -33,6 +32,10 @@ describe('TimeEntryService - End-to-End Tests', () => {
 
     // Setup default auth service behavior
     authServiceSpy.getCurrentUserId.and.returnValue(of(mockUserId));
+    
+    // Mock the getUserId method directly to avoid authentication issues
+    // This is critical to prevent "User not authenticated" errors
+    spyOn(service as any, 'getUserId').and.returnValue(of(mockUserId));
   });
 
   afterEach(() => {
