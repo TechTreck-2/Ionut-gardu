@@ -2,9 +2,9 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ Ionut-gardu ]
+    branches: [ Ionut-Gardu ]
   pull_request:
-    branches: [ Ionut-gardu ]
+    branches: [ Ionut-Gardu ]
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
