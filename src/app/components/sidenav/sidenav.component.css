@@ -117,7 +117,23 @@
     transition:  0.3s ease-in-out; 
   }
 
-  
+  .logout-container {
+    margin-top: auto;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+  }
+
+  .logout-button {
+    color: var(--mat-sys-error) !important;
+  }
+
+  .logout-button:hover {
+    background-color: rgba(244, 67, 54, 0.04) !important;
+  }
+
+  .logout-button mat-icon,
+  .logout-button span {
+    color: var(--mat-sys-error) !important;
+  }
   
   ::ng-deep a[mat-list-item]:hover mat-icon,
   ::ng-deep a[mat-list-item]:hover span {

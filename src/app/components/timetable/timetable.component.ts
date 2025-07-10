@@ -18,18 +18,16 @@ import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { EditTimeDialogComponent } from '../edit-time-dialog/edit-time-dialog.component';
 import { TimerService } from '../../services/timer.service';
+import { TimeEntryService } from '../../services/time-entry.service';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
-import { PermissionLeaveService } from '../../services/permission-leave.service';
+import { PermissionService } from '../../services/permission.service';
 import { PermissionEntry } from '../../models/permission-entry.model';
-interface TimeEntry {
-  date: string;
-  hoursWorked: number;
-  clockInTime?: string;
-  clockOutTime?: string;
-}
+import { TimeEntry } from '../../models/time-entry.model';
+import { firstValueFrom } from 'rxjs';
+
 
 @Component({
   selector: 'app-time-table',
@@ -63,84 +61,164 @@ export class TimeTrackingComponent implements OnInit {
   dataSource = new MatTableDataSource<TimeEntry>();
   filteredData = new MatTableDataSource<TimeEntry>();
   permissionEntries: PermissionEntry[] = [];
+  vacationDays: Date[] = []; // Added to store vacation days
 
   selectedDate: Date | null = null;
   newHours: number | null = null;
   startDate: Date | null = null;
   endDate: Date | null = null;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
-  timerService = inject(TimerService);
-  permissionLeaveService = inject(PermissionLeaveService);
+  @ViewChild(MatSort) sort!: MatSort;  timerService = inject(TimerService);
+  timeEntryService = inject(TimeEntryService);
+  permissionService = inject(PermissionService);
   snackBar = inject(MatSnackBar);
   dialog = inject(MatDialog);
   
   ngOnInit(): void {
-    this.loadFromLocalStorage();
+    //console.log('[TimeTrackingComponent] ngOnInit started');
+    this.loadInitialData();
     this.loadPermissionEntries();
+    this.loadVacationDays(); // Add method to preload vacation days
     const date = new Date();
     this.startDate = new Date(date);
     this.endDate = new Date(date);
 
+    // Subscribe to timer updates without making API calls on each tick
     this.timerService.time$.subscribe((time) => {
-      const today = new Date().toDateString();
+      //console.log('[TimeTrackingComponent] Timer update received', time);
+      const today = new Date().toISOString().split('T')[0];
 
-      this.filterEntriesByDate();
+      const clockInTime = this.timerService.getFirstClockIn()?.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+      const clockOutTime = this.timerService.getClockOutTime()?.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
 
-      const clockInTime = this.timerService
-        .getFirstClockIn()
-        ?.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        });
-      const clockOutTime = this.timerService
-        .getClockOutTime()
-        ?.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        });
-
-      const entry: TimeEntry = {
-        date: today,
-        hoursWorked: time / 3600, // Convert seconds to hours
-        clockInTime: clockInTime || '---',
-        clockOutTime: clockOutTime || '---',
-      };
-
-      const existingEntryIndex = this.dataSource.data.findIndex(
-        (e) => e.date === today
-      );
+      // Update local data source without making API calls
+      const currentData = [...this.dataSource.data];
+      const existingEntryIndex = currentData.findIndex(e => e.date === today);
+      
       if (existingEntryIndex > -1) {
-        this.dataSource.data[existingEntryIndex] = entry;
+        currentData[existingEntryIndex] = {
+          ...currentData[existingEntryIndex],
+          clockInTime: clockInTime || '---',
+          clockOutTime: clockOutTime || '---'
+        };
       } else {
-        this.dataSource.data.push(entry);
-        this.saveToLocalStorage();
+        currentData.push({
+          date: today,
+          clockInTime: clockInTime || '---',
+          clockOutTime: clockOutTime || '---'
+        });
       }
+      
+      this.dataSource.data = currentData;
+      //this.filterEntriesByDate();
     });
+    //console.log('[TimeTrackingComponent] ngOnInit completed');
+  }
+
+  async saveToStrapi(entry: TimeEntry) {
+    //console.log('[TimeTrackingComponent] saveToStrapi called with entry:', entry);
+    try {
+      if (entry.documentId) {
+        //console.log('[TimeTrackingComponent] Updating existing entry with ID:', entry.documentId);
+        await firstValueFrom(this.timeEntryService.updateTimeEntry(entry.documentId, entry));
+      } else {
+        //console.log('[TimeTrackingComponent] Creating new time entry');
+        const newEntry = await firstValueFrom(this.timeEntryService.createTimeEntry(entry));
+        // Update local entry with the new documentId
+        const index = this.dataSource.data.findIndex(e => e.date === entry.date);
+        if (index > -1) {
+          const updatedData = [...this.dataSource.data];
+          updatedData[index] = { ...newEntry };
+          this.dataSource.data = updatedData;
+          //console.log('[TimeTrackingComponent] Local data updated with new entry');
+        }
+      }
+    } catch (error) {
+      //console.error('[TimeTrackingComponent] Error saving to Strapi:', error);
+      throw error;
+    }
+  }
+
+  // Load initial data from Strapi only once
+  private async loadInitialData() {
+    //console.log('[TimeTrackingComponent] loadInitialData started');
+    try {
+      const entries = await firstValueFrom(this.timeEntryService.getTimeEntries());
+      //console.log('[TimeTrackingComponent] Received', entries.length, 'time entries');
+      this.dataSource.data = entries;
+      this.filterEntriesByDate();
+      //console.log('[TimeTrackingComponent] Data filtered by date');
+    } catch (error) {
+      //console.error('[TimeTrackingComponent] Error loading time entries:', error);
+      this.snackBar.open('Error loading time entries', 'Close', { duration: 3000 });
+    }
   }
 
   ngAfterViewInit(): void {
+    //console.log('[TimeTrackingComponent] ngAfterViewInit started');
     setTimeout(() => {
       this.filteredData.paginator = this.paginator;
       this.filteredData.sort = this.sort;
       this.sort.active = 'date';
       this.sort.direction = 'asc';
+      //console.log('[TimeTrackingComponent] Paginator and sort configured');
     }, 0);
   }
 
   ngOnDestroy(): void {
+    //console.log('[TimeTrackingComponent] ngOnDestroy called');
     this.startDate = null;
     this.endDate = null;
     this.filteredData = new MatTableDataSource(this.dataSource.data);
   }
-
   loadPermissionEntries(): void {
-    this.permissionEntries = this.permissionLeaveService.getPermissionEntries();
-    //console.log('Permission entries loaded.', this.permissionEntries); // Debugging log
+    //console.log('[TimeTrackingComponent] loadPermissionEntries called');
+    this.permissionEntries = this.permissionService.getPermissionEntries();
+    //console.log('[TimeTrackingComponent] Permission entries loaded:', this.permissionEntries.length);
+  }
+  async loadVacationDays(): Promise<void> {
+    //console.log('[TimeTrackingComponent] loadVacationDays started');
+    try {
+      const entries = await firstValueFrom(this.timerService.vacationService.getVacationEntries());
+      this.vacationDays = [];
+      
+      entries.forEach(entry => {
+        if (entry.status === 'Approved') {
+          let currentDate = new Date(entry.startDate);
+          const endDate = new Date(entry.endDate);
+          
+          while (currentDate <= endDate) {
+            const dayOfWeek = currentDate.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Exclude weekends
+              this.vacationDays.push(new Date(currentDate));
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+        }
+      });
+      
+      //console.log('[TimeTrackingComponent] Loaded', this.vacationDays.length, 'vacation days');
+    } catch (error) {
+      //console.error('[TimeTrackingComponent] Error loading vacation days:', error);
+      // Even if there's an error, keep going with an empty array instead of failing entirely
+      this.vacationDays = [];
+      this.snackBar.open('Error loading vacation data, vacation days might not be displayed correctly', 'Close', { duration: 3000 });
+    }
+  }
+
+  async refreshVacationData(): Promise<void> {
+    await this.loadVacationDays();
+    this.filterEntriesByDate(); // Refresh the table
   }
 
   calculatePermissionLeaveDuration(entry: TimeEntry): string {
@@ -156,7 +234,7 @@ export class TimeTrackingComponent implements OnInit {
   
     let totalSeconds = 0;
     for (const permissionEntry of permissionEntries) {
-      const durationString = this.permissionLeaveService.calculateDuration(permissionEntry);
+      const durationString = this.permissionService.calculateDuration(permissionEntry);
       const [hours, minutes, seconds] = durationString.split(':').map(Number);
       totalSeconds += hours * 3600 + minutes * 60 + seconds;
     }
@@ -176,7 +254,12 @@ export class TimeTrackingComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
-  filterEntriesByDate() {
+  async filterEntriesByDate() {
+    //console.log('[TimeTrackingComponent] filterEntriesByDate called, date range:', this.startDate, 'to', this.endDate);
+    
+    // Refresh vacation data first to ensure we have up-to-date information
+    await this.loadVacationDays();
+    
     const currentData = [...this.dataSource.data];
 
     if (this.startDate && this.endDate) {
@@ -191,22 +274,23 @@ export class TimeTrackingComponent implements OnInit {
         return entryDate >= start.getTime() && entryDate <= end.getTime();
       });
 
+      //console.log('[TimeTrackingComponent] Filtered entries:', filteredEntries.length, 'out of', currentData.length);
       this.filteredData = new MatTableDataSource(filteredEntries);
 
-      this.filteredData.sortingDataAccessor = (item, property) => {
+      this.filteredData.sortingDataAccessor = (item: TimeEntry, property: string) => {
         switch (property) {
           case 'date':
             return new Date(item.date).getTime();
           case 'hoursWorked':
-            return item.hoursWorked;
+            return this.getHoursWorked(item);
           case 'clockInTime':
-            return item.clockInTime ? item.clockInTime : '';
+            return item.clockInTime || '';
           case 'clockOutTime':
-            return item.clockOutTime ? item.clockOutTime : '';
+            return item.clockOutTime || '';
           case 'permissionLeaveDuration':
             return this.getPermissionLeaveDurationInSeconds(item);
           case 'status':
-            return this.computeStatus(item);
+            return this.getStatusSync(item);
           default:
             return '';
         }
@@ -215,21 +299,16 @@ export class TimeTrackingComponent implements OnInit {
       this.filteredData.paginator = this.paginator;
       this.filteredData.sort = this.sort;
     } else {
-      this.loadFromLocalStorage();
+      // If no date range is selected, show all entries
+      //console.log('[TimeTrackingComponent] No date range selected, showing all entries');
+      this.filteredData = new MatTableDataSource(currentData);
+      this.filteredData.paginator = this.paginator;
+      this.filteredData.sort = this.sort;
     }
   }
 
-  private getPermissionLeaveDurationInSeconds(item: TimeEntry): number {
-    const durationString = this.calculatePermissionLeaveDuration(item);
-    if (durationString === '---') {
-      return 0;
-    }
-
-    const [hours, minutes, seconds] = durationString.split(':').map(Number);
-    return hours * 3600 + minutes * 60 + seconds;
-  }
-
-  editEntry(entry: TimeEntry) {
+  async editEntry(entry: TimeEntry) {
+    //console.log('[TimeTrackingComponent] editEntry called with entry:', entry);
     const dialogRef = this.dialog.open(EditTimeDialogComponent, {
       data: {
         clockInTime: entry.clockInTime,
@@ -237,34 +316,44 @@ export class TimeTrackingComponent implements OnInit {
       },
     });
 
-    dialogRef.afterClosed().subscribe((result) => {
+    dialogRef.afterClosed().subscribe(async (result) => {
+      //console.log('[TimeTrackingComponent] Dialog closed with result:', result);
       if (
         result &&
         this.validateTimeFormat(result.clockInTime) &&
         this.validateTimeFormat(result.clockOutTime)
       ) {
-        entry.clockInTime = result.clockInTime;
-        entry.clockOutTime = result.clockOutTime;
-        entry.hoursWorked = this.calculateHoursWorked(
-          result.clockInTime,
-          result.clockOutTime,
-          entry.date
-        );
+        try {
+          const updatedEntry = {
+            ...entry,
+            clockInTime: result.clockInTime,
+            clockOutTime: result.clockOutTime,
+          };
 
-        const originalEntryIndex = this.dataSource.data.findIndex(
-          (e) => e.date === entry.date
-        );
-        if (originalEntryIndex > -1) {
-          this.dataSource.data[originalEntryIndex] = entry;
+          //console.log('[TimeTrackingComponent] Updating entry with new times:', updatedEntry);
+          // Update local state immediately
+          const currentData = [...this.dataSource.data];
+          const index = currentData.findIndex(e => e.date === entry.date);
+          if (index > -1) {
+            currentData[index] = updatedEntry;
+            this.dataSource.data = currentData;
+            this.filterEntriesByDate();
+            //console.log('[TimeTrackingComponent] Local data updated');
+          }
+
+          // Then save to Strapi
+          await this.saveToStrapi(updatedEntry);
+          this.timerService.loadState();
+          
+          this.snackBar.open('Entry updated successfully!', 'Close', {
+            duration: 2000,
+          });
+        } catch (error) {
+          //console.error('[TimeTrackingComponent] Error updating entry:', error);
+          this.snackBar.open('Failed to update entry', 'Close', { duration: 3000 });
         }
-
-        this.saveToLocalStorage();
-        this.timerService.loadState();
-
-        this.snackBar.open('Entry updated successfully!', 'Close', {
-          duration: 2000,
-        });
-      } else {
+      } else if (result) {
+        //console.warn('[TimeTrackingComponent] Invalid time format provided:', result);
         this.snackBar.open(
           'Invalid time format. Please use HH:mm:ss.',
           'Close',
@@ -274,80 +363,135 @@ export class TimeTrackingComponent implements OnInit {
     });
   }
 
-  deleteEntry(entry: TimeEntry) {
-    this.timerService.deleteTimeEntry(entry.date);
-    this.snackBar.open('Entry deleted successfully!', 'Close', {
-      duration: 2000,
-    });
-    this.loadFromLocalStorage();
-  }
-
-  private saveToLocalStorage() {
-    const dataToSave = this.dataSource.data.map((entry) => ({
-      date: entry.date,
-      hoursWorked: entry.hoursWorked,
-      clockInTime: entry.clockInTime,
-      clockOutTime: entry.clockOutTime,
-    }));
-    localStorage.setItem('timeEntries', JSON.stringify(dataToSave));
-    //console.log('Data saved to local storage.', dataToSave); // Debugging log
-  }
-
-  private loadFromLocalStorage() {
-    const savedData = localStorage.getItem('timeEntries');
-    if (savedData) {
-      const parsedData: TimeEntry[] = JSON.parse(savedData);
-      this.dataSource.data = parsedData;
-      //console.log('Data loaded from local storage.', parsedData); // Debugging log
-    } else {
-      this.dataSource.data = [];
-      console.log('No data found in local storage.'); // Debugging log
+  calculateHoursWorked(clockIn: string, clockOut: string, date: string): number {
+    //console.log(`[TimeTrackingComponent] calculateHoursWorked called with clockIn: ${clockIn}, clockOut: ${clockOut}, date: ${date}`);
+    if (clockIn === '---' || clockOut === '---') {
+      return 0;
     }
-  }
+    
+    const clockInParts = clockIn.split(':').map(Number);
+    const clockOutParts = clockOut.split(':').map(Number);
 
-  calculateHoursWorked(
-    clockIn: string,
-    clockOut: string,
-    date: string
-  ): number {
-    return this.timerService.calculateHoursWorked(
-      clockIn,
-      clockOut,
-      date
+    if (clockInParts.length !== 3 || clockOutParts.length !== 3) {
+      //console.error('[TimeTrackingComponent] Invalid time format. Expected HH:mm:ss');
+      return 0;
+    }
+
+    const [inHours, inMinutes, inSeconds] = clockInParts;
+    const [outHours, outMinutes, outSeconds] = clockOutParts;
+
+    const inDate = new Date();
+    const outDate = new Date();
+
+    inDate.setHours(inHours, inMinutes, inSeconds, 0);
+    outDate.setHours(outHours, outMinutes, outSeconds, 0);
+
+    const diffInMilliseconds = outDate.getTime() - inDate.getTime();
+    let diffInHours = diffInMilliseconds / 1000 / 3600;
+
+    const formattedDate = this.formatDate(new Date(date));
+    this.loadPermissionEntries();
+    const permissionEntry = this.permissionEntries.find(
+      (pe) => pe.date === formattedDate && pe.status === 'Approved'
+    );
+
+    if (permissionEntry) {
+      //console.log('[TimeTrackingComponent] Found permission entry for date:', permissionEntry);
+      const permissionDuration = this.permissionService.calculateDuration(permissionEntry);
+      const [permHours, permMinutes, permSeconds] = permissionDuration.split(':').map(Number);
+      const permDurationInHours = permHours + permMinutes / 60 + permSeconds / 3600;
+      diffInHours -= permDurationInHours;
+      //console.log('[TimeTrackingComponent] Adjusted hours after permission:', diffInHours);
+    }
+
+    //console.log('[TimeTrackingComponent] Final hours worked:', Math.max(0, diffInHours));
+    return Math.max(0, diffInHours);
+  }
+  getHoursWorked(entry: TimeEntry): number {
+    if (!entry || !entry.clockInTime || !entry.clockOutTime || !entry.date) {
+      return 0;
+    }
+    return this.calculateHoursWorked(
+      entry.clockInTime || '---',
+      entry.clockOutTime || '---',
+      entry.date
     );
   }
 
-  computeStatus(entry: TimeEntry): string {
-    const seconds = entry.hoursWorked;
-    const day = entry.date;
-    const entryDate = new Date(day);
-
-    if (this.timerService.isWeekend(entryDate)) {
-      return 'Weekend';
+  private getPermissionLeaveDurationInSeconds(entry: TimeEntry): number {
+    const durationString = this.calculatePermissionLeaveDuration(entry);
+    if (durationString === '---') {
+      return 0;
     }
 
-    if (this.timerService.isVacationDay(entryDate)) {
-      return 'Vacation Day';
-    } else if (seconds < 0) {
-      return 'Error';
-    } else if (seconds === 0) {
-      return 'Untracked';
-    } else if (seconds < 8) {
-      return 'Partially tracked';
-    } else {
-      return 'Tracked';
+    const [hours, minutes, seconds] = durationString.split(':').map(Number);
+    return hours * 3600 + minutes * 60 + seconds;
+  }
+
+  private async updateEntry(entry: TimeEntry, updates: Partial<TimeEntry>) {
+    if (!entry.documentId) {
+      this.snackBar.open('Cannot update entry: missing documentId', 'Close', {
+        duration: 3000,
+      });
+      return;
+    }
+    
+    await firstValueFrom(this.timeEntryService.updateTimeEntry(entry.documentId, {
+      ...entry,
+      ...updates
+    }));
+    await this.loadInitialData();
+  }
+
+  async deleteEntry(entry: TimeEntry) {
+    //console.log('[TimeTrackingComponent] deleteEntry called for entry:', entry);
+    if (!entry.documentId) {
+      //console.error('[TimeTrackingComponent] Cannot delete entry: missing documentId');
+      this.snackBar.open('Cannot delete entry: missing documentId', 'Close', {
+        duration: 3000,
+      });
+      return;
+    }
+
+    // Store the current data for rollback
+    const previousData = [...this.dataSource.data];
+
+    try {
+      // Update local state immediately
+      const currentData = this.dataSource.data.filter(e => e.date !== entry.date);
+      //console.log('[TimeTrackingComponent] Filtered out entry, remaining entries:', currentData.length);
+      this.dataSource.data = currentData;
+      this.filterEntriesByDate();
+
+      // Then delete from Strapi
+      //console.log('[TimeTrackingComponent] Deleting entry from Strapi with ID:', entry.documentId);
+      await firstValueFrom(this.timeEntryService.deleteTimeEntry(entry.documentId));
+      this.snackBar.open('Entry deleted successfully!', 'Close', {
+        duration: 2000,
+      });
+    } catch (error) {
+      //console.error('[TimeTrackingComponent] Error deleting entry:', error);
+      // Restore previous state if API call fails
+      //console.log('[TimeTrackingComponent] Restoring previous data after delete failure');
+      this.dataSource.data = previousData;
+      this.filterEntriesByDate();
+      this.snackBar.open('Failed to delete entry', 'Close', { duration: 3000 });
     }
   }
 
-  isDisabled(entry: TimeEntry): boolean {
-    const status = this.computeStatus(entry);
-    return status === 'Weekend' || status === 'Vacation Day';
+  private pad(num: number): string {
+    return num < 10 ? '0' + num : num.toString();
   }
 
   validateTimeFormat(time: string): boolean {
     const timeFormat = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/;
     return timeFormat.test(time);
   }
+
+  isWeekday = (date: Date | null): boolean => {
+    const day = (date || new Date()).getDay();
+    return day !== 0 && day !== 6;
+  };
 
   formatTime(seconds: number): string {
     const hours = Math.floor(seconds / 3600);
@@ -356,17 +500,75 @@ export class TimeTrackingComponent implements OnInit {
     return `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(secs)}`;
   }
 
-  private pad(num: number): string {
-    return num < 10 ? '0' + num : num.toString();
+  private getStatusSync(entry: TimeEntry): string {
+    //console.log('[TimeTrackingComponent] getStatusSync called for entry date:', entry.date);
+    const hoursWorked = this.getHoursWorked(entry);
+    const seconds = hoursWorked * 3600;
+    const entryDate = new Date(entry.date);
+
+    if (this.timerService.isWeekend(entryDate)) {
+      //console.log('[TimeTrackingComponent] Entry is a weekend');
+      return 'Weekend';
+    }
+
+    // For sorting purposes, we'll use a simplified status without vacation check
+    if (seconds < 0) {
+      //console.log('[TimeTrackingComponent] Entry has error in hours calculation');
+      return 'Error';
+    } else if (seconds === 0) {
+      //console.log('[TimeTrackingComponent] Entry is untracked');
+      return 'Untracked';
+    } else if (
+      entry.clockInTime === '---' ||
+      entry.clockOutTime === '---'
+    ) {
+      //console.log('[TimeTrackingComponent] Entry is partially tracked');
+      return 'Partially tracked';
+    } else {
+      //////console.log('[TimeTrackingComponent] Entry is fully tracked');
+      return 'Tracked';
+    }
+  }  computeStatus(entry: TimeEntry): string {
+    ////////console.log('[TimeTrackingComponent] computeStatus called for entry date:', entry.date);
+    const hoursWorked = this.getHoursWorked(entry);
+    const seconds = hoursWorked * 3600;
+    const entryDate = new Date(entry.date);
+
+    if (this.timerService.isWeekend(entryDate)) {
+      ////console.log('[TimeTrackingComponent] Entry is a weekend');
+      return 'Weekend';
+    }
+
+    // Use the local method instead of service call
+    if (this.isVacationDay(entryDate)) {
+      //console.log('[TimeTrackingComponent] Entry is a vacation day');
+      return 'Vacation Day';
+    } else if (seconds < 0) {
+      //console.log('[TimeTrackingComponent] Entry has error in hours calculation');
+      return 'Error';
+    } else if (seconds === 0) {
+      //console.log('[TimeTrackingComponent] Entry is untracked');
+      return 'Untracked';
+    } else if (
+      entry.clockInTime === '---' ||
+      entry.clockOutTime === '---' ||
+      hoursWorked < 8  // Added check for hours worked less than 8
+    ) {
+      //console.log('[TimeTrackingComponent] Entry is partially tracked');
+      return 'Partially tracked';
+    } else {
+      //console.log('[TimeTrackingComponent] Entry is fully tracked');
+      return 'Tracked';
+    }
   }
-
-  isWeekday = (date: Date | null): boolean => {
-    const day = (date || new Date()).getDay();
-    return day !== 0 && day !== 6;
-  };
-
+  isDisabled(entry: TimeEntry): boolean {
+    const status = this.computeStatus(entry);
+    return status === 'Weekend' || status === 'Vacation Day';
+  }
   calculateDetailedMonthlySummary() {
+    //console.log('[TimeTrackingComponent] calculateDetailedMonthlySummary called');
     if (!this.startDate || !this.endDate) {
+      //console.log('[TimeTrackingComponent] No date range selected for summary');
       return {
         totalHoursWorked: 0,
         totalPossibleHours: 0,
@@ -383,33 +585,54 @@ export class TimeTrackingComponent implements OnInit {
     end.setMonth(end.getMonth() + 1); 
     end.setDate(0); 
     end.setHours(23, 59, 59, 999);
+    
+    //console.log('[TimeTrackingComponent] Calculating summary for period:', start, 'to', end);
   
     const monthlyEntries = this.dataSource.data.filter((entry) => {
       const entryDate = new Date(entry.date).getTime();
       return entryDate >= start.getTime() && entryDate <= end.getTime();
     });
+    
+    //console.log('[TimeTrackingComponent] Found', monthlyEntries.length, 'entries for the month');
   
     let totalHoursWorked = 0;
     let vacationDays = 0;
     let untrackedOrPartiallyTrackedDays = 0;
-    const totalPossibleHours = monthlyEntries.length * 8; 
+    const totalPossibleHours = monthlyEntries.length * 8;
   
+    // Use the synchronous status that includes vacation days
     monthlyEntries.forEach((entry) => {
-      totalHoursWorked += entry.hoursWorked;
+      totalHoursWorked += this.getHoursWorked(entry);
       const status = this.computeStatus(entry);
   
-      if (status === 'Vacation Day') {
+      if (this.timerService.isWeekend(new Date(entry.date))) {
+        vacationDays++;
+      } else if (status === 'Vacation Day') {
         vacationDays++;
       } else if (status === 'Untracked' || status === 'Partially tracked') {
         untrackedOrPartiallyTrackedDays++;
       }
     });
-  
-    return {
+    
+    const summary = {
       totalHoursWorked,
       totalPossibleHours,
       vacationDays,
       untrackedOrPartiallyTrackedDays,
     };
+    
+    //console.log('[TimeTrackingComponent] Monthly summary calculated:', summary);
+    return summary;
+  }
+  isVacationDay(date: Date): boolean {
+    // Check if the date is in our preloaded vacation days
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    return this.vacationDays.some(vacationDay => {
+      const vDate = new Date(vacationDay);
+      vDate.setHours(0, 0, 0, 0);
+      return targetDate.getTime() === vDate.getTime();
+    });
   }
 }

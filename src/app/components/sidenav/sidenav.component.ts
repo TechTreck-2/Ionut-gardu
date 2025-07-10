@@ -15,6 +15,8 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { HomeOfficeLocationComponent } from '../home-office-location/home-office-location.component';
 import { HomeOfficeRequestComponent } from '../home-office-request/home-office-request.component';
+import { AuthService } from '../../services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-sidenav',
@@ -40,6 +42,8 @@ import { HomeOfficeRequestComponent } from '../home-office-request/home-office-r
 })
 export class SidenavComponent {
   styleManager = inject(StyleManagerService);
+  authService = inject(AuthService);
+  router = inject(Router);
   selectedComponent = 'dashboard';
   isExpanded = false;
   isChecked = false;
@@ -83,4 +87,8 @@ export class SidenavComponent {
     }
   }
   
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
 }

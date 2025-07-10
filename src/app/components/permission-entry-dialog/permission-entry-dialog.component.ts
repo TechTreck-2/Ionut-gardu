@@ -1,4 +1,4 @@
-import { Component, inject, Inject } from '@angular/core';
+import { Component, inject, Inject, OnInit } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -15,6 +15,8 @@ import { CommonModule } from '@angular/common';
 import { PermissionEntry } from '../../models/permission-entry.model';
 import { VacationEntry } from '../../models/vacation-entry.model';
 import { VacationService } from '../../services/vacation.service';
+import { firstValueFrom } from 'rxjs';
+
 @Component({
   selector: 'app-permission-entry-dialog',
   standalone: true,
@@ -30,7 +32,7 @@ import { VacationService } from '../../services/vacation.service';
   templateUrl: './permission-entry-dialog.component.html',
   styleUrls: ['./permission-entry-dialog.component.css'],
 })
-export class PermissionEntryDialogComponent {
+export class PermissionEntryDialogComponent implements OnInit {
   form: FormGroup;
   errorMessage: string = '';
   existingEntries: PermissionEntry[] = [];
@@ -40,7 +42,6 @@ export class PermissionEntryDialogComponent {
   dialogRef = inject(MatDialogRef<PermissionEntryDialogComponent>);
   constructor(@Inject(MAT_DIALOG_DATA) public data: any) {
     this.existingEntries = data.existingEntries || [];
-    this.vacationEntries = this.vacationService.getVacationEntries();
     this.form = this.fb.group({
       date: ['', Validators.required],
       startTime: [
@@ -62,6 +63,15 @@ export class PermissionEntryDialogComponent {
     this.form.valueChanges.subscribe(() => {
       this.validateTimes();
     });
+  }
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.vacationEntries = await firstValueFrom(this.vacationService.getVacationEntries());
+    } catch (error) {
+      console.error('Error loading vacation entries:', error);
+      this.errorMessage = 'Failed to load vacation entries';
+    }
   }
 
   dateFilter = (date: Date | null): boolean => {

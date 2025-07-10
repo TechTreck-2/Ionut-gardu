@@ -5,13 +5,25 @@ import { CommonModule } from '@angular/common';
 import { HomeOfficeEntry } from '../../models/home-office-entry.model';
 import { HomeOfficeService } from '../../services/home-office.service';
 import { MatButtonModule } from '@angular/material/button';
+import { HttpClientModule } from '@angular/common/http';
+import { finalize } from 'rxjs';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-home-office-location',
   templateUrl: './home-office-location.component.html',
   styleUrls: ['./home-office-location.component.css'],
   standalone: true,
-  imports: [GoogleMapsModule, FormsModule, CommonModule, MatButtonModule],
+  imports: [
+    GoogleMapsModule, 
+    FormsModule, 
+    CommonModule, 
+    MatButtonModule, 
+    HttpClientModule,
+    MatProgressSpinnerModule,
+    MatSnackBarModule
+  ],
 })
 export class HomeOfficeLocationComponent implements OnInit {
   address: string = '';
@@ -21,15 +33,30 @@ export class HomeOfficeLocationComponent implements OnInit {
   zoom = 6;
   markerPosition: google.maps.LatLngLiteral | null = null;
   geocoder = new google.maps.Geocoder();
+  isLoading = false;
 
-  constructor(private homeOfficeService: HomeOfficeService) {}
+  constructor(
+    private homeOfficeService: HomeOfficeService,
+    private snackBar: MatSnackBar
+  ) {}
 
   ngOnInit() {
     this.loadSavedLocations();
   }
 
   private loadSavedLocations() {
-    this.addedLocations = this.homeOfficeService.getEntries();
+    this.isLoading = true;
+    this.homeOfficeService.getEntries()
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (locations) => {
+          this.addedLocations = locations;
+        },
+        error: (error) => {
+          console.error('Error loading locations:', error);
+          this.showError('Failed to load locations');
+        }
+      });
   }
 
   searchAddress() {
@@ -40,18 +67,73 @@ export class HomeOfficeLocationComponent implements OnInit {
 
   addLocation() {
     if (this.searchedAddress) {
+      this.isLoading = true;
+      console.log(`Adding location with address: ${this.searchedAddress}`);
+      
       const newEntry: HomeOfficeEntry = {
         address: this.searchedAddress,
       };
-      this.homeOfficeService.saveEntry(newEntry);
-      this.loadSavedLocations();
-      this.clearInputs();
+      
+      console.log('Created entry object:', newEntry);
+      
+      this.homeOfficeService.saveEntry(newEntry)
+        .pipe(finalize(() => {
+          console.log('Request completed, loading state set to false');
+          this.isLoading = false;
+        }))
+        .subscribe({
+          next: (savedLocation) => {
+            console.log('Location added successfully:', savedLocation);
+            this.loadSavedLocations();
+            this.clearInputs();
+            this.showSuccess('Location added successfully');
+          },
+          error: (error) => {
+            console.error('Error adding location:', error);
+            // Add more detailed error information
+            if (error.message) {
+              console.error('Error message:', error.message);
+            }
+            if (error.status) {
+              console.error('Error status:', error.status);
+            }
+            this.showError(`Failed to add location: ${error.message || 'Unknown error'}`);
+          }
+        });
+    } else {
+      console.warn('Attempted to add location with empty address');
     }
   }
+  
+  private showSuccess(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 3000,
+      panelClass: ['success-snackbar']
+    });
+  }
 
-  deleteLocation(index: number) {
-    this.homeOfficeService.deleteEntry(index);
-    this.loadSavedLocations();
+  private showError(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }  deleteLocation(index: number) {
+    const locationToDelete = this.addedLocations[index];
+    if (locationToDelete && locationToDelete.documentId) {
+      this.isLoading = true;
+      this.homeOfficeService.deleteEntry(locationToDelete.documentId)
+        .pipe(finalize(() => this.isLoading = false))
+        .subscribe({
+          next: () => {
+            this.loadSavedLocations();
+            this.showSuccess('Location deleted successfully');
+          },
+          error: (error) => {
+            console.error('Error deleting location:', error);
+            this.showError('Failed to delete location');
+          }
+        });
+    }
   }
 
   private geocodeAddress(address: string) {

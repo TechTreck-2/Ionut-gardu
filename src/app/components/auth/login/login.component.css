@@ -1,0 +1,327 @@
+/* Container and Layout */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background-color: var(--mat-sys-background);
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Card Styling */
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 22px #0000001a;
+  background-color: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+}
+
+/* Header Styling */
+.login-title {
+  font-size: 1.5rem !important;
+  font-weight: 400 !important;
+  color: var(--mat-sys-on-surface);
+  margin-bottom: 8px !important;
+  text-align: center;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+mat-card-subtitle {
+  text-align: center !important;
+  color: var(--mat-sys-on-surface-variant) !important;
+  font-size: 0.875rem !important;
+  margin-bottom: 24px !important;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Form Styling */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+/* Form Field Enhancements */
+mat-form-field {
+  margin-bottom: 0 !important;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+mat-form-field.mat-mdc-form-field {
+  --mdc-outlined-text-field-container-height: 48px;
+  --mdc-outlined-text-field-focus-outline-color: var(--mat-sys-primary);
+  --mdc-outlined-text-field-hover-outline-color: var(--mat-sys-primary);
+  --mdc-outlined-text-field-outline-color: var(--mat-sys-outline);
+  --mdc-outlined-text-field-focus-outline-width: 1px;
+}
+
+/* Input Field Styling */
+input[matInput] {
+  font-size: 0.875rem;
+  padding: 0;
+  color: var(--mat-sys-on-surface);
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Remove focus outline from Material Design inputs */
+input[matInput]:focus,
+input[matInput]:focus-visible,
+.mat-mdc-input-element:focus,
+.mat-mdc-input-element:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Fix focus outline to stay within container */
+mat-form-field.mat-mdc-form-field .mdc-notched-outline {
+  border-radius: 4px;
+}
+
+mat-form-field.mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+mat-form-field.mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+mat-form-field.mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+  border-width: 1px !important;
+  border-color: var(--mat-sys-primary) !important;
+}
+
+/* Icon Styling */
+mat-icon[matSuffix] {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+mat-form-field:focus-within mat-icon[matSuffix] {
+  color: var(--mat-sys-primary);
+}
+
+/* Password Toggle Button */
+button[matSuffix],
+.password-toggle {
+  border: none;
+  background: transparent;
+  color: var(--mat-sys-on-surface-variant);
+  min-width: 40px;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+}
+
+button[matSuffix]:hover,
+.password-toggle:hover {
+  color: var(--mat-sys-primary);
+  background-color: rgba(0, 0, 0, 0.04);
+  border-radius: 50%;
+}
+
+button[matSuffix]:focus,
+.password-toggle:focus {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+button[matSuffix] mat-icon,
+.password-toggle mat-icon {
+  font-size: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+  color: inherit !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: 'Material Icons' !important;
+}
+
+/* Fallback for when Material Icons don't load */
+.password-toggle mat-icon:empty::before {
+  content: '👁';
+  font-size: 16px;
+}
+
+/* Error Styling */
+.error-message {
+  padding: 12px 16px;
+  background-color: var(--mat-sys-error-container);
+  border: 1px solid var(--mat-sys-error);
+  border-radius: 4px;
+  color: var(--mat-sys-on-error-container);
+  font-size: 0.875rem;
+  margin: 8px 0;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+mat-error {
+  font-size: 0.75rem !important;
+  margin-top: 4px !important;
+  color: var(--mat-sys-error) !important;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Button Styling */
+.login-button {
+  height: 48px !important;
+  border-radius: 4px !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  margin-top: 16px;
+  background-color: var(--mat-sys-primary) !important;
+  color: var(--mat-sys-on-primary) !important;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+.login-button:hover:not([disabled]) {
+  background-color: var(--mat-sys-primary) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.login-button[disabled] {
+  background-color: var(--mat-sys-surface-variant) !important;
+  color: var(--mat-sys-on-surface-variant) !important;
+  cursor: not-allowed;
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Spinner Styling */
+mat-spinner {
+  --mdc-circular-progress-active-indicator-color: var(--mat-sys-on-primary);
+}
+
+/* Links */
+.forgot-password {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.link {
+  color: var(--mat-sys-primary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+.link:hover,
+.link:focus {
+  text-decoration: underline;
+}
+
+.link:focus {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Card Actions */
+.card-actions {
+  margin-top: 24px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+}
+
+.register-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+.register-text {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.register-link {
+  color: var(--mat-sys-primary);
+  text-decoration: none;
+  font-weight: 500;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+.register-link:hover,
+.register-link:focus {
+  text-decoration: underline;
+}
+
+.register-link:focus {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 16px;
+  }
+
+  .login-card {
+    padding: 24px;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .login-title {
+    font-size: 1.375rem !important;
+  }
+
+  mat-card-subtitle {
+    font-size: 0.8rem !important;
+  }
+
+  .login-button {
+    height: 44px !important;
+    font-size: 0.9rem !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .login-card {
+    padding: 16px;
+  }
+
+  form {
+    gap: 12px;
+  }
+}
+
+/* Focus styles for better accessibility */
+.login-button:focus {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+/* Loading state accessibility */
+.login-card[aria-busy="true"] {
+  position: relative;
+}
+
+/* Support for theme switching */
+html[data-theme="dark"] .login-card {
+  background-color: var(--mat-sys-surface);
+  border-color: var(--mat-sys-outline-variant);
+}
+
+/* Material Design elevation consistency */
+.login-card:hover {
+  box-shadow: 0 2px 24px #0000001f;
+}
+
+/* Ensure consistent font across all elements */
+* {
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+}

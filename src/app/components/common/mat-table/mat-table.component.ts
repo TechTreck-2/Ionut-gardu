@@ -21,7 +21,7 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
-import { PermissionLeaveService } from '../../../services/permission-leave.service';
+import { PermissionService } from '../../../services/permission.service';
 import { VacationService } from '../../../services/vacation.service';
 import { VacationEntry } from '../../../models/vacation-entry.model'; 
 import { PermissionEntry } from '../../../models/permission-entry.model'; 
@@ -43,14 +43,15 @@ import { PermissionEntry } from '../../../models/permission-entry.model';
     MatDialogModule,
   ],
 })
-export class MatTableComponent<T extends { status: string }> implements OnInit {
-  permissionLeaveService = inject (PermissionLeaveService);
+export class MatTableComponent<T extends { status: string; id?: number; documentId?: string }> implements OnInit {
+  permissionService = inject(PermissionService);
   
-
   @Input() entries: T[] = [];
   @Input() displayedColumns: string[] = [];
-  @Input() localStorageKey: string = 'defaultEntries'; // Unique key for each component
+  @Input() localStorageKey: string = '';
   @Output() entryDeleted = new EventEmitter<T>();
+  @Output() entryApproved = new EventEmitter<T>();
+  @Output() entryCancelled = new EventEmitter<T>();
   startDate: Date | null = null;
   endDate: Date | null = null;
 
@@ -68,8 +69,9 @@ export class MatTableComponent<T extends { status: string }> implements OnInit {
       this.updateDataSource();
     }
   }
-
   initializeDataSource() {
+    // Ensure entries have consistent structure for Strapi integration
+    this.processEntries();
     this.filteredData.data = this.entries;
     setTimeout(() => {
       this.filteredData.paginator = this.paginator;
@@ -78,11 +80,48 @@ export class MatTableComponent<T extends { status: string }> implements OnInit {
   }
 
   updateDataSource() {
+    // Ensure entries have consistent structure for Strapi integration
+    this.processEntries();
     this.filteredData.data = this.entries;
     this.filteredData.paginator = this.paginator;
     this.filteredData.sort = this.sort;
   }
-
+  
+  /**
+   * Process entries to ensure they have consistent fields needed for Strapi
+   */
+  private processEntries() {
+    this.entries = this.entries.map(entry => {
+      // If entry comes from Strapi, it might have data in different formats
+      // Handle case where entry is wrapped in Strapi's data/attributes structure
+      if ((entry as any).data && (entry as any).data.attributes) {
+        const strapiEntry = entry as any;
+        return {
+          ...strapiEntry.data.attributes,
+          id: strapiEntry.data.id,
+          documentId: strapiEntry.data.id.toString(),
+          status: strapiEntry.data.attributes.status || strapiEntry.data.attributes.approvalStatus,
+        } as T;
+      }
+      
+      // Handle case where entry has Strapi's attributes but not wrapped in data
+      if ((entry as any).attributes) {
+        const strapiEntry = entry as any;
+        return {
+          ...strapiEntry.attributes,
+          id: strapiEntry.id,
+          documentId: strapiEntry.id.toString(),
+          status: strapiEntry.attributes.status || strapiEntry.attributes.approvalStatus,
+        } as T;
+      }
+      
+      // Ensure documentId exists even if not provided
+      return {
+        ...entry,
+        documentId: entry.documentId || (entry.id ? entry.id.toString() : undefined)
+      };
+    });
+  }
   filterEntriesByDate() {
     const currentData = [...this.entries];
 
@@ -144,56 +183,75 @@ export class MatTableComponent<T extends { status: string }> implements OnInit {
       this.filteredData.paginator = this.paginator;
       this.filteredData.sort = this.sort;
     } else {
-      this.loadFromLocalStorage();
-    }
-  }
-
-  loadFromLocalStorage() {
-    const storedEntries = localStorage.getItem(this.localStorageKey);
-    this.entries = storedEntries ? JSON.parse(storedEntries) : [];
-    this.filteredData.data = this.entries;
-    console.log('Entries loaded from local storage:', this.entries);
-  }
-
+      this.updateDataSource();
+    }  }  
+  
   deleteEntry(entry: T) {
+    // Format log in a way that shows Strapi-relevant data
+    console.log('Full entry to delete:', {
+      documentId: entry.documentId || (entry.id ? entry.id.toString() : undefined),
+      id: entry.id,
+      rawEntry: entry
+    });
+    
     const index = this.entries.findIndex((e) => e === entry);
     if (index > -1) {
+      // Ensure documentId is set before emitting
+      if (!this.entries[index].documentId && this.entries[index].id) {
+        this.entries[index] = { 
+          ...this.entries[index], 
+          documentId: this.entries[index].id!.toString() 
+        };
+      }
+      
+      const entryToEmit = {...this.entries[index]};
       this.entries.splice(index, 1);
       this.filteredData.data = [...this.entries];
-      this.entryDeleted.emit(entry);
-    }
-
-    localStorage.setItem(this.localStorageKey, JSON.stringify(this.entries));
-    console.log('Entries after deletion:', this.entries);
-  }
-
+      this.entryDeleted.emit(entryToEmit);
+    }  }
+  
   approveEntry(entry: T): void {
+    console.log('Full entry to approve:', {
+      documentId: entry.documentId || (entry.id ? entry.id.toString() : undefined),
+      id: entry.id,
+      rawEntry: entry
+    });
+    
     const index = this.entries.findIndex((e) => e === entry);
     if (index > -1) {
+      // Ensure documentId is set before emitting
+      if (!this.entries[index].documentId && this.entries[index].id) {
+        this.entries[index] = { 
+          ...this.entries[index], 
+          documentId: this.entries[index].id!.toString() 
+        };
+      }
+      
       this.entries[index].status = 'Approved';
       this.filteredData.data = [...this.entries];
+      this.entryApproved.emit(this.entries[index]);
+    }  }  
   
-      // Determine which key to use for local storage
-      const storageKey = this.localStorageKey === 'vacationEntries' || this.localStorageKey === 'permissionEntries'
-        ? this.localStorageKey
-        : 'defaultEntries';
-  
-      localStorage.setItem(storageKey, JSON.stringify(this.entries));
-    }
-  }
-
   cancelEntry(entry: T): void {
+    console.log('Full entry to cancel:', {
+      documentId: entry.documentId || (entry.id ? entry.id.toString() : undefined),
+      id: entry.id,
+      rawEntry: entry
+    });
+    
     const index = this.entries.findIndex((e) => e === entry);
     if (index > -1) {
+      // Ensure documentId is set before emitting
+      if (!this.entries[index].documentId && this.entries[index].id) {
+        this.entries[index] = { 
+          ...this.entries[index], 
+          documentId: this.entries[index].id!.toString() 
+        };
+      }
+      
       this.entries[index].status = 'Cancelled';
       this.filteredData.data = [...this.entries];
-  
-      // Determine which key to use for local storage
-      const storageKey = this.localStorageKey === 'vacationEntries' || this.localStorageKey === 'permissionEntries'
-        ? this.localStorageKey
-        : 'defaultEntries';
-  
-      localStorage.setItem(storageKey, JSON.stringify(this.entries));
+      this.entryCancelled.emit(this.entries[index]);
     }
   }
 
@@ -201,8 +259,7 @@ export class MatTableComponent<T extends { status: string }> implements OnInit {
     const day = (date || new Date()).getDay();
     return day !== 0 && day !== 6;
   };
-
   calculateDuration(entry: any): string {
-    return this.permissionLeaveService.calculateDuration(entry);
+    return this.permissionService.calculateDuration(entry);
   }
 }

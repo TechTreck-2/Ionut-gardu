@@ -1,16 +1,20 @@
 <div class="container">
-  <h1>Home Office Location</h1>
-  <div class="shadow-container">
+  <h1>Home Office Location</h1>  <div class="shadow-container">
+    <div class="loading-overlay" *ngIf="isLoading">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
     <div class="controls">
       <input [(ngModel)]="address" placeholder="Enter address" />
       <button 
       mat-raised-button
       color="primary"
-      (click)="searchAddress()">Search</button>
+      (click)="searchAddress()"
+      [disabled]="isLoading">Search</button>
       <button *ngIf="searchedAddress" 
       mat-raised-button
       color="primary"
-      (click)="addLocation()">
+      (click)="addLocation()"
+      [disabled]="isLoading">
         Add Location
       </button>
     </div>

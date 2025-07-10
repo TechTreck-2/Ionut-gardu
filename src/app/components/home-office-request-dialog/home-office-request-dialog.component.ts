@@ -11,18 +11,30 @@ import { CommonModule } from '@angular/common';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { HomeOfficeRequestEntry } from '../../models/home-office-request-entry.model';
 import { HomeOfficeRequestService } from '../../services/home-office-request.service';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-home-office-request-dialog',
   templateUrl: './home-office-request-dialog.component.html',
   styleUrl: './home-office-request-dialog.component.css',
   standalone: true,
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatSelectModule, MatInputModule, MatButtonModule, CommonModule, MatDatepickerModule],
+  imports: [
+    ReactiveFormsModule, 
+    MatFormFieldModule, 
+    MatSelectModule, 
+    MatInputModule, 
+    MatButtonModule, 
+    CommonModule, 
+    MatDatepickerModule,
+    MatProgressSpinnerModule
+  ],
 })
 export class HomeOfficeRequestDialogComponent {
   form: FormGroup;
   locations: HomeOfficeEntry[] = [];
-  requests : HomeOfficeRequestEntry[] = [];
+  requests: HomeOfficeRequestEntry[] = [];
+  loading = false;
+
   constructor(
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<HomeOfficeRequestDialogComponent>,
@@ -30,12 +42,35 @@ export class HomeOfficeRequestDialogComponent {
     private homeOfficeService: HomeOfficeService,
     private homeOfficeRequestService: HomeOfficeRequestService
   ) {
-    this.locations = this.homeOfficeService.getEntries();
-    this.requests = this.homeOfficeRequestService.getEntries();
+    // Initialize form
     this.form = this.fb.group({
       address: ['', Validators.required],
       startDate: ['', Validators.required],
       endDate: ['', Validators.required],
+    });
+    
+    this.loading = true;
+    
+    // Load locations from Strapi
+    this.homeOfficeService.getEntries().subscribe({
+      next: (locations) => {
+        this.locations = locations;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading locations:', error);
+        this.loading = false;
+      }
+    });
+    
+    // Load requests from Strapi
+    this.homeOfficeRequestService.getEntries().subscribe({
+      next: (requests) => {
+        this.requests = requests;
+      },
+      error: (error) => {
+        console.error('Error loading requests:', error);
+      }
     });
   }
 

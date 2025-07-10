@@ -7,6 +7,9 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { TimerService } from '../../services/timer.service';
 import { MatIconModule } from '@angular/material/icon';
 import { VacationService } from '../../services/vacation.service';
+import { TimeEntryService } from '../../services/time-entry.service';
+import { firstValueFrom } from 'rxjs';
+
 @Component({
   selector: 'app-timer',
   standalone: true,
@@ -36,34 +39,105 @@ export class TimerComponent implements OnInit {
   datePipe = inject(DatePipe);
   timerService = inject(TimerService);
   vacationService = inject(VacationService);
-  vacationDaysLeft!: number; // Default value, will be updated from service
-
-  ngOnInit(): void {
+  timeEntryService = inject(TimeEntryService);
+  vacationDaysLeft!: number;
+  async ngOnInit(): Promise<void> {
     this.timerService.time$.subscribe((time) => {
       this.time = time;
       this.updateDataSource();
     });
     this.checkisWeekend();
-    this.checkisVacation();
+    await this.checkisVacation();
+    await this.loadTimeEntries();
     this.timerService.loadState();
-    this.vacationService.updateVacationDaysLeft(); // Update vacation days left
+    await this.vacationService.updateVacationDaysLeft();
     this.vacationDaysLeft = this.vacationService.getVacationDaysLeft();
+  }
+
+  private async loadTimeEntries(): Promise<void> {
+    try {
+      const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
+      
+      const entries = await firstValueFrom(this.timeEntryService.getTimeEntries());
+      
+      // Initialize with default values
+      this.firstClockInDisplay = '---';
+      this.clockOutTimeDisplay = '---';
+      this.time = 0;
+      
+      // Filter entries for today
+      const todayEntries = entries.filter(entry => entry.date === today);
+      
+      if (todayEntries.length > 0) {
+        const entry = todayEntries[0];
+        this.firstClockInDisplay = entry.clockInTime || '---';
+        this.clockOutTimeDisplay = entry.clockOutTime || '---';
+        
+        if (entry.clockInTime && entry.clockOutTime) {
+          const hoursWorked = this.calculateAndFormatHoursWorked(
+            entry.clockInTime,
+            entry.clockOutTime,
+            entry.date
+          );
+          this.time = this.timeStringToSeconds(hoursWorked);
+        }
+      } else {
+        // Create a new entry for today if none exists
+        try {
+          await firstValueFrom(this.timeEntryService.createTimeEntry({
+            date: today,
+            clockInTime: '---',
+            clockOutTime: '---'
+          }));
+          console.log('Created new time entry for today');
+        } catch (error) {
+          console.error('Error creating time entry for today:', error);
+        }
+      }
+
+      // Always update dataSource, whether we found entries or not
+      this.dataSource = [
+        { label: 'Current Date', value: this.currentDate },
+        {
+          label: 'First Clock In',
+          value: this.firstClockInDisplay
+        },
+        {
+          label: 'Clock Out',
+          value: this.clockOutTimeDisplay
+        },
+        { 
+          label: 'All for Today', 
+          value: this.formattedTime 
+        },
+        { 
+          label: 'Time Left', 
+          value: this.timeLeft 
+        }
+      ];
+    } catch (error) {
+      console.error('Error loading time entries:', error);
+      this.snackBar.open('Error loading time entries', 'Close', {
+        duration: 3000,
+      });
+    }
+  }
+
+  private timeStringToSeconds(timeString: string): number {
+    const [hours, minutes, seconds] = timeString.split(':').map(Number);
+    return hours * 3600 + minutes * 60 + seconds;
   }
 
   ngAfterViewInit():void {
     
   }
 
-  logLocalStorageContent() {
-    this.timerService.logLocalStorageContent();
-  }
-
   get isRunning() {
     return this.timerService.runningStatus;
   }
 
-  startTimer() {
-    const statusMessage = this.timerService.startTimer();
+  async startTimer() {
+    const statusMessage = await this.timerService.startTimer();
     this.snackBar.open(statusMessage, 'Close', { duration: 2000 });
     this.updateDataSource();
   }
@@ -146,9 +220,8 @@ export class TimerComponent implements OnInit {
   checkisWeekend() {
     this.isWeekend = this.timerService.isWeekend(new Date());
   }
-
-  checkisVacation() {
-    this.isVacation = this.timerService.isVacationDay(new Date());
+  async checkisVacation() {
+    this.isVacation = await this.timerService.isVacationDay(new Date());
   }
 
   calculateAndFormatHoursWorked(

@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "time_entries",
+  "info": {
+    "singularName": "time-entry",
+    "pluralName": "time-entries",
+    "displayName": "Time Entry"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "date": {
+      "type": "string",
+      "required": true
+    },
+    "clockInTime": {
+      "type": "string",
+      "regex": "^(([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]|---)$"
+    },
+    "clockOutTime": {
+      "type": "string",
+      "regex": "^(([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]|---)$"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "time_entries"
+    }
+  }
+}

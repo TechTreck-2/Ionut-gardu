@@ -1,0 +1,25 @@
+{
+  "kind": "collectionType",
+  "collectionName": "home_office_locations",
+  "info": {
+    "singularName": "home-office-location",
+    "pluralName": "home-office-locations",
+    "displayName": "Home Office Location"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "address": {
+      "type": "string",
+      "required": true
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "home_office_locations"
+    }
+  }
+}

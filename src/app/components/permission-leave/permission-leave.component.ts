@@ -1,12 +1,13 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableComponent } from '../common/mat-table/mat-table.component';
 import { MatButtonModule } from '@angular/material/button';
 import { PermissionEntry } from '../../models/permission-entry.model';
-import { PermissionLeaveService } from '../../services/permission-leave.service';
+import { PermissionService } from '../../services/permission.service';
 import { CommonModule } from '@angular/common';
 import { PermissionEntryDialogComponent } from '../permission-entry-dialog/permission-entry-dialog.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-permission-leave',
@@ -15,16 +16,39 @@ import { PermissionEntryDialogComponent } from '../permission-entry-dialog/permi
   standalone: true,
   imports: [MatTableComponent, MatButtonModule, CommonModule],
 })
-export class PermissionLeaveComponent implements OnInit {
-  entries: PermissionEntry[] = [];
+export class PermissionLeaveComponent implements OnInit, OnDestroy {  entries: PermissionEntry[] = [];
+  isLoading = true;
+  hasError = false;
   displayedColumns: string[] = ['actions', 'date', 'startTime', 'endTime', 'leave-duration', 'status'];
-  permissionLeaveService = inject(PermissionLeaveService);
+  permissionService = inject(PermissionService);
   dialog = inject(MatDialog);
-  snackBar = inject(MatSnackBar);
+  snackBar = inject(MatSnackBar);  private subscriptions = new Subscription();
   
-
   ngOnInit(): void {
-    this.entries = this.permissionLeaveService.getPermissionEntries();
+    // Initialize with any existing entries (already filtered for current user by the API service)
+    this.entries = this.permissionService.getPermissionEntries();
+    
+    // Subscribe to future updates (only entries for the logged-in user will be received)
+    this.isLoading = true;
+    this.subscriptions.add(
+      this.permissionService.getPermissionEntriesAsync().subscribe({
+        next: (entries) => {
+          this.entries = entries;
+          this.isLoading = false;
+          this.hasError = false;
+        },
+        error: (error) => {
+          console.error('Error loading permission entries:', error);
+          this.isLoading = false;
+          this.hasError = true;
+          this.snackBar.open('Failed to load your permission leave requests', 'Close', { duration: 5000 });
+        }
+      })
+    );
+  }
+  
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   openModal() {
@@ -41,20 +65,79 @@ export class PermissionLeaveComponent implements OnInit {
           endTime: result.endTime,     // Ensure this is in "HH:mm" format
           status: 'Pending',
         };
-        this.saveEntry(newEntry);
+        this.saveEntry(newEntry);      }
+    });
+  }
+  
+  saveEntry(entry: PermissionEntry) {
+    this.subscriptions.add(
+      this.permissionService.savePermissionEntry(entry).subscribe({
+        next: () => this.snackBar.open('Entry saved successfully', 'Close', { duration: 2000 }),
+        error: (err) => {
+          console.error('Error saving entry:', err);
+          this.snackBar.open('Failed to save entry', 'Close', { duration: 2000 });
+        }
+      })
+    );
+  }
+  deleteEntry(entry: PermissionEntry) {
+    this.subscriptions.add(
+      this.permissionService.deletePermissionEntry(entry).subscribe({
+        next: () => this.snackBar.open('Entry deleted successfully', 'Close', { duration: 2000 }),
+        error: (err) => {
+          console.error('Error deleting entry:', err);
+          this.snackBar.open('Failed to delete entry', 'Close', { duration: 2000 });
+        }
+      })
+    );
+  }
+  
+  // Event handlers for mat-table events
+  onEntryDeleted(entry: PermissionEntry): void {
+    console.log('Entry deleted with documentId:', entry.documentId);
+    
+    // Make sure the entry has a valid documentId
+    if (!entry.documentId && entry.id) {
+      entry.documentId = entry.id.toString();
+      console.log('Generated documentId from ID:', entry.documentId);
+    }
+    
+    // Use the documentId from Strapi for deletion
+    this.deleteEntry(entry);
+  }
+    onEntryApproved(entry: PermissionEntry): void {
+    console.log('Entry approved with ID:', entry.id, 'and documentId:', entry.documentId);
+    
+    // Make sure the entry has a valid documentId
+    if (!entry.documentId && entry.id) {
+      entry.documentId = entry.id.toString();
+      console.log('Generated documentId from ID:', entry.documentId);
+    }
+    
+    this.permissionService.approvePermissionEntry(entry).subscribe({
+      next: () => this.snackBar.open('Entry approved successfully', 'Close', { duration: 2000 }),
+      error: (error: Error) => {
+        console.error('Error approving entry:', error);
+        this.snackBar.open('Failed to approve entry', 'Close', { duration: 2000 });
       }
     });
   }
-
-  saveEntry(entry: PermissionEntry) {
-    this.permissionLeaveService.savePermissionEntry(entry);
-    this.entries = this.permissionLeaveService.getPermissionEntries();
-    this.snackBar.open('Entry saved successfully', 'Close', { duration: 2000 });
-  }
-
-  deleteEntry(entry: PermissionEntry) {
-    this.permissionLeaveService.deletePermissionEntry(entry);
-    this.entries = this.permissionLeaveService.getPermissionEntries();
-    this.snackBar.open('Entry deleted successfully', 'Close', { duration: 2000 });
+  
+  onEntryCancelled(entry: PermissionEntry): void {
+    console.log('Entry cancelled with ID:', entry.id, 'and documentId:', entry.documentId);
+    
+    // Make sure the entry has a valid documentId
+    if (!entry.documentId && entry.id) {
+      entry.documentId = entry.id.toString();
+      console.log('Generated documentId from ID:', entry.documentId);
+    }
+    
+    this.permissionService.cancelPermissionEntry(entry).subscribe({
+      next: () => this.snackBar.open('Entry rejected successfully', 'Close', { duration: 2000 }),
+      error: (error: Error) => {
+        console.error('Error rejecting entry:', error);
+        this.snackBar.open('Failed to reject entry', 'Close', { duration: 2000 });
+      }
+    });
   }
 }

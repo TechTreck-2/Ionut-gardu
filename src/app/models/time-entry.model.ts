@@ -1,6 +1,10 @@
 export interface TimeEntry {
+    id?: number;
+    documentId?: string;
     date: string;
-    hoursWorked: number;
     clockInTime?: string;
     clockOutTime?: string;
-  }
+    user?: {
+      id: number;
+    };
+}
