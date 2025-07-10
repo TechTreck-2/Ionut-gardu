@@ -31,6 +31,13 @@ jobs:
       - name: Build project
         run: npm run build -- --configuration production
 
+      # Copy files from browser subfolder to expected location
+      - name: Prepare files for deployment
+        run: |
+          mkdir -p dist/tt-project-deploy
+          cp -r dist/tt-project/browser/* dist/tt-project-deploy/
+          cp dist/tt-project/browser/index.html dist/tt-project-deploy/404.html
+          
       - name: Deploy to GitHub Pages
         uses: AhsanAyaz/angular-deploy-gh-pages-actions@v1.3.1
         with:
@@ -38,4 +45,5 @@ jobs:
           build_configuration: production
           base_href: /Ionut-gardu/
           deploy_branch: gh-pages
-          angular_dist_build_folder: dist/tt-project
+          angular_dist_build_folder: dist/tt-project-deploy
+          skip_build: true
