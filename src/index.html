@@ -3,13 +3,26 @@
 <head>
   <meta charset="utf-8">
   <title>TimeTracking App</title>
-  <base href="/">
+  <base href="/Ionut-gardu/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/png" href="hourglass.png">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCtGYgun8R_Bwlx_C_jrWRtKwlWcBPj1c4"></script>
+  <!-- GitHub Pages SPA redirect handler -->
+  <script type="text/javascript">
+    (function(l) {
+      if (l.search[1] === '/' ) {
+        var decoded = l.search.slice(1).split('&').map(function(s) { 
+          return s.replace(/~and~/g, '&')
+        }).join('?');
+        window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded + l.hash
+        );
+      }
+    }(window.location))
+  </script>
 </head>
 <body class="mat-typography">
   <app-root>

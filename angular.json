@@ -22,6 +22,7 @@
             "tsConfig": "tsconfig.app.json",
             "assets": [
               "src/assets",
+              "src/.nojekyll",
               {
                 "glob": "**/*",
                 "input": "public"
@@ -96,7 +97,8 @@
         "deploy": {
           "builder": "angular-cli-ghpages:deploy",
           "options": {
-            "baseHref": "https://techtreck-2.github.io/Ionut-gardu/"
+            "noSilent": true,
+            "noBuild": false
           }
         }
       }
