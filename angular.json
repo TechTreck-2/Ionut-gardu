@@ -22,6 +22,7 @@
             "tsConfig": "tsconfig.app.json",
             "assets": [
               "src/assets",
+              "src/.nojekyll",
               {
                 "glob": "**/*",
                 "input": "public"
@@ -94,7 +95,14 @@
           }
         },
         "deploy": {
-          "builder": "angular-cli-ghpages:deploy"
+          "builder": "angular-cli-ghpages:deploy",
+          "options": {
+            "baseHref": "/Ionut-gardu/",
+            "noSilent": true,
+            "name": "GitHub Pages Deployer",
+            "email": "your-email@example.com",
+            "noBuild": false
+          }
         }
       }
     }
