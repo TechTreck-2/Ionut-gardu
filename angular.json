@@ -94,10 +94,7 @@
           }
         },
         "deploy": {
-          "builder": "angular-cli-ghpages:deploy",
-          "options": {
-            "baseHref": "https://techtreck-2.github.io/Ionut-gardu/"
-          }
+          "builder": "angular-cli-ghpages:deploy"
         }
       }
     }
