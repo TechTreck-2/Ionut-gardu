@@ -97,7 +97,6 @@
         "deploy": {
           "builder": "angular-cli-ghpages:deploy",
           "options": {
-            "baseHref": "/Ionut-gardu/",
             "noSilent": true,
             "noBuild": false
           }
