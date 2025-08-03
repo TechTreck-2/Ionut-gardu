@@ -53,6 +53,8 @@ export class SidenavComponent {
   constructor(private matIconRegistry: MatIconRegistry, private domSanitizer: DomSanitizer) {
     // Set the default font set class to Material Symbols
     this.matIconRegistry.setDefaultFontSetClass('material-symbols-outlined');
+    const theme = 'assets/azure-blue.css';
+    this.styleManager.setStyle(theme);
     
   }
 
