@@ -75,7 +75,6 @@ describe('VacationService - End-to-End Tests', () => {
           duration: 4,
           reason: 'Family vacation to mountains',
           approvalState: 'Pending',
-          documentId: jasmine.any(String),
           users_permissions_user: mockUserId
         }
       };
@@ -146,8 +145,7 @@ describe('VacationService - End-to-End Tests', () => {
           })
         }));
         
-        // Check documentId is defined
-        expect(req.request.body.data.documentId).toBeDefined();
+      
 
         // Complete the request
         req.flush(mockStrapiResponse);

@@ -1,13 +1,13 @@
 {
   "name": "tt-project",
-  "version": "0.0.0",
-  "scripts": {
+  "version": "0.0.0",  "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:github": "ng build --configuration=github-pages",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "deploy": "ng deploy"
+    "deploy": "ng build --configuration=github-pages && ng deploy"
   },
   "private": true,
   "dependencies": {
