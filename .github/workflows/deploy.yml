@@ -2,8 +2,10 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ Ionut-Gardu ]  # Match your current branch name
-  workflow_dispatch:  # Allows manual triggering
+    branches: [ Ionut-Gardu ]  
+  pull_request:
+    branches: [ Ionut-Gardu ] 
+  workflow_dispatch:  
 
 permissions:
   contents: read
