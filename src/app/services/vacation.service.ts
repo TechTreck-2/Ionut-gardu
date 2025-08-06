@@ -229,13 +229,7 @@ export class VacationService {
   async saveVacationEntry(entry: VacationEntry): Promise<void> {
     const userId = await firstValueFrom(this.getUserId());
     
-    // Generate a unique documentId if needed
-    if (!entry.documentId) {
-      // Create a unique ID that's more than just a number
-      entry.documentId = 'vac_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
-    }
-    
-    //console.log('Saving entry with documentId:', entry.documentId);
+    //console.log('Saving vacation entry:', entry);
     
     const payload = {
       data: {
@@ -244,7 +238,7 @@ export class VacationService {
         duration: entry.duration,
         reason: entry.reason,
         approvalState: entry.status,
-        documentId: entry.documentId, // Explicitly include documentId
+        // Remove documentId from payload - Strapi generates this automatically
         users_permissions_user: userId
       }
     };    try {
