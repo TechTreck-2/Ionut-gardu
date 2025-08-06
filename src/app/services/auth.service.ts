@@ -116,7 +116,33 @@ export class AuthService {
   }
   getToken(): string | null {
     return this.isLocalStorageAvailable() ? localStorage.getItem('jwt') : null;
-  }isAuthenticated(): boolean {
+  }
+
+  isAuthenticated(): boolean {
     return !!this.getToken();
+  }
+
+  // Forgot password functionality
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/auth/forgot-password`, { email }).pipe(
+      catchError(error => {
+        console.error('AuthService - Forgot password error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Reset password functionality
+  resetPassword(code: string, password: string, passwordConfirmation: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/auth/reset-password`, {
+      code,
+      password,
+      passwordConfirmation
+    }).pipe(
+      catchError(error => {
+        console.error('AuthService - Reset password error:', error);
+        return throwError(() => error);
+      })
+    );
   }
 }
