@@ -5,7 +5,7 @@ This document explains how to configure the nightly test reports for your GitHub
 ## Features
 
 The nightly test workflow includes:
-- **Scheduled execution**: Runs every night at 2:00 AM UTC
+- **Scheduled execution**: Runs every night at midnight UTC (2-3 AM Romanian time)
 - **Automatic issue creation**: Creates GitHub issues with detailed test reports
 - **Email notifications**: Optional email reports (requires setup)
 - **Detailed reporting**: Includes test counts, failed test names, and links to workflow runs
@@ -28,13 +28,14 @@ To enable email notifications, add these secrets to your repository:
 |------------|-------------|---------|
 | `EMAIL_USERNAME` | SMTP username (e.g., Gmail address) | `your-email@gmail.com` |
 | `EMAIL_PASSWORD` | SMTP password or app password | `your-app-password` |
-| `NOTIFICATION_EMAIL` | Email address to receive reports | `team@company.com` |
+| `NOTIFICATION_EMAIL` | Email address to receive reports (can be same as EMAIL_USERNAME) | `your-email@gmail.com` |
 
 #### Gmail Setup Example:
 1. Enable 2-factor authentication on your Gmail account
 2. Generate an App Password: Google Account → Security → App passwords
 3. Use your Gmail address as `EMAIL_USERNAME`
 4. Use the generated App Password as `EMAIL_PASSWORD`
+5. Use the same Gmail address as `NOTIFICATION_EMAIL` to receive reports on the same account
 
 ### 3. Customization
 
@@ -42,8 +43,8 @@ To enable email notifications, add these secrets to your repository:
 Edit the cron expression in `.github/workflows/deploy.yml`:
 ```yaml
 schedule:
-  # Current: 2:00 AM UTC daily
-  - cron: '0 2 * * *'
+  # Current: Midnight UTC (2-3 AM Romanian time)
+  - cron: '0 0 * * *'
   
   # Examples:
   # - cron: '0 1 * * *'    # 1:00 AM UTC daily
@@ -88,9 +89,10 @@ Remove or comment out the "Send email notification" step in the workflow.
 
 ## Time Zones
 
-The cron schedule uses UTC time. To convert to your local time:
-- **EST (UTC-5)**: 2:00 AM UTC = 9:00 PM EST (previous day)
-- **PST (UTC-8)**: 2:00 AM UTC = 6:00 PM PST (previous day)
-- **CET (UTC+1)**: 2:00 AM UTC = 3:00 AM CET
+The cron schedule uses UTC time. Current schedule runs at midnight UTC:
+- **Romanian Time (EET/EEST)**: Midnight UTC = 2 AM (winter) / 3 AM (summer)
+- **EST (UTC-5)**: Midnight UTC = 7:00 PM EST (previous day)
+- **PST (UTC-8)**: Midnight UTC = 4:00 PM PST (previous day)
+- **CET (UTC+1)**: Midnight UTC = 1:00 AM CET
 
 Use online cron converters to calculate the right time for your timezone.
