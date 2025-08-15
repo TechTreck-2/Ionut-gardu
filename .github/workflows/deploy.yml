@@ -75,7 +75,7 @@ jobs:
             const totalTests = '${{ steps.parse_results.outputs.total_tests }}';
             const passedTests = '${{ steps.parse_results.outputs.passed_tests }}';
             const failedTests = '${{ steps.parse_results.outputs.failed_tests }}';
-            const failedTestNames = `${{ steps.parse_results.outputs.failed_test_names }}`;
+            const failedTestNames = \`${{ steps.parse_results.outputs.failed_test_names }}\`;
             
             const success = testExitCode === '0';
             const status = success ? '✅ SUCCESS' : '❌ FAILURE';
