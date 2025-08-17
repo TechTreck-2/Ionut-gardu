@@ -49,11 +49,49 @@ jobs:
         id: parse_results
         run: |
           if [ -f test_results.txt ]; then
-            TOTAL_TESTS=$(grep -o '[0-9]* tests completed' test_results.txt | head -1 | grep -o '[0-9]*' || echo "0")
-            FAILED_TESTS=$(grep -o '[0-9]* FAILED' test_results.txt | grep -o '[0-9]*' || echo "0")
+            # Display the test output for debugging
+            echo "=== Test output content ==="
+            cat test_results.txt
+            echo "=== End of test output ==="
+            
+            # Try different patterns for Angular/Jasmine output
+            # Pattern 1: "Executed X of Y"
+            TOTAL_TESTS=$(grep -E "Executed [0-9]+ of [0-9]+" test_results.txt | tail -1 | grep -oE "Executed [0-9]+" | grep -oE "[0-9]+" || echo "0")
+            
+            # Pattern 2: "X specs, Y failures"
+            if [ "$TOTAL_TESTS" = "0" ]; then
+              TOTAL_TESTS=$(grep -E "[0-9]+ specs?" test_results.txt | tail -1 | grep -oE "^[0-9]+" || echo "0")
+            fi
+            
+            # Pattern 3: Look for any number followed by "test"
+            if [ "$TOTAL_TESTS" = "0" ]; then
+              TOTAL_TESTS=$(grep -iE "[0-9]+ tests?" test_results.txt | tail -1 | grep -oE "[0-9]+" || echo "0")
+            fi
+            
+            # Look for failures with different patterns
+            # Pattern 1: "X FAILED"
+            FAILED_TESTS=$(grep -E "[0-9]+ FAILED" test_results.txt | tail -1 | grep -oE "[0-9]+" || echo "0")
+            
+            # Pattern 2: "X failures"
+            if [ "$FAILED_TESTS" = "0" ]; then
+              FAILED_TESTS=$(grep -E "[0-9]+ failures?" test_results.txt | tail -1 | grep -oE "[0-9]+" || echo "0")
+            fi
+            
+            # Pattern 3: Look in "Executed X of Y (Z FAILED)"
+            if [ "$FAILED_TESTS" = "0" ]; then
+              FAILED_TESTS=$(grep -E "Executed.*FAILED" test_results.txt | tail -1 | grep -oE "\([0-9]+ FAILED\)" | grep -oE "[0-9]+" || echo "0")
+            fi
+            
             PASSED_TESTS=$((TOTAL_TESTS - FAILED_TESTS))
             
-            FAILED_TEST_NAMES=$(grep -A 5 "FAILED TESTS:" test_results.txt | grep "✗" | sed 's/.*✗ /- /' || echo "No failed tests")
+            # Look for failed test names with different patterns
+            FAILED_TEST_NAMES=$(grep -E "FAILED|✗|×|SPEC HAS NO EXPECTATIONS|Error:" test_results.txt | head -10 | sed 's/^[[:space:]]*/- /' || echo "No failed tests found")
+            
+            # Debug output
+            echo "Parsing results:"
+            echo "  Total tests found: $TOTAL_TESTS"
+            echo "  Failed tests found: $FAILED_TESTS"
+            echo "  Passed tests calculated: $PASSED_TESTS"
             
             echo "total_tests=$TOTAL_TESTS" >> $GITHUB_OUTPUT
             echo "passed_tests=$PASSED_TESTS" >> $GITHUB_OUTPUT
@@ -62,10 +100,11 @@ jobs:
             echo "$FAILED_TEST_NAMES" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           else
+            echo "No test_results.txt file found"
             echo "total_tests=0" >> $GITHUB_OUTPUT
             echo "passed_tests=0" >> $GITHUB_OUTPUT
             echo "failed_tests=0" >> $GITHUB_OUTPUT
-            echo "failed_test_names=No test results found" >> $GITHUB_OUTPUT
+            echo "failed_test_names=No test results file found" >> $GITHUB_OUTPUT
           fi
         
       - name: Create test report issue
