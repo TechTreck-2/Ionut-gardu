@@ -117,7 +117,7 @@ jobs:
             const failedTests = '${{ steps.parse_results.outputs.failed_tests }}';
             
             // Safely handle failed test names with proper escaping
-            const failedTestNames = '${{ steps.parse_results.outputs.failed_test_names }}';
+            const failedTestNames = `${{ steps.parse_results.outputs.failed_test_names }}`.replace(/[\\"'`]/g, ' ');
             
             const success = testExitCode === '0';
             const status = success ? '✅ SUCCESS' : '❌ FAILURE';
@@ -156,7 +156,7 @@ jobs:
         if: always()
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: smtp-mail.outlook.com
+          server_address: smtp.gmail.com
           server_port: 587
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
