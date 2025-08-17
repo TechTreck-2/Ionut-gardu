@@ -85,7 +85,12 @@ jobs:
             PASSED_TESTS=$((TOTAL_TESTS - FAILED_TESTS))
             
             # Look for failed test names with different patterns
-            FAILED_TEST_NAMES=$(grep -E "FAILED|✗|×|SPEC HAS NO EXPECTATIONS|Error:" test_results.txt | head -10 | sed 's/^[[:space:]]*/- /' || echo "No failed tests found")
+            if [ "$FAILED_TESTS" = "0" ]; then
+              FAILED_TEST_NAMES="No failed tests"
+            else
+              # Only capture actual test failures, not console errors
+              FAILED_TEST_NAMES=$(grep -E "FAILED.*spec|✗.*spec|×.*spec|SPEC HAS NO EXPECTATIONS" test_results.txt | head -10 | sed 's/^[[:space:]]*/- /' || echo "No specific test failure details found")
+            fi
             
             # Debug output
             echo "Parsing results:"
@@ -152,6 +157,19 @@ jobs:
               labels: success ? ['automated-test', 'success'] : ['automated-test', 'test-failure', 'bug']
             });
         
+      - name: Parse console warnings
+        id: parse_warnings
+        run: |
+          if [ -f test_results.txt ]; then
+            # Extract console errors/warnings that aren't test failures
+            CONSOLE_WARNINGS=$(grep -E "ERROR:|TypeError:|Error:" test_results.txt | head -5 | sed 's/^[[:space:]]*/- /' || echo "No console warnings found")
+            echo "console_warnings<<EOF" >> $GITHUB_OUTPUT
+            echo "$CONSOLE_WARNINGS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "console_warnings=No test output to analyze" >> $GITHUB_OUTPUT
+          fi
+
       - name: Send email notification (optional)
         if: always()
         uses: dawidd6/action-send-mail@v3
@@ -170,7 +188,10 @@ jobs:
             Failed: ${{ steps.parse_results.outputs.failed_tests }}
             
             ${{ steps.parse_results.outputs.failed_tests != '0' && 'Failed Tests:' || '' }}
-            ${{ steps.parse_results.outputs.failed_test_names }}
+            ${{ steps.parse_results.outputs.failed_tests != '0' && steps.parse_results.outputs.failed_test_names || '' }}
+            
+            Console Warnings/Errors (not test failures):
+            ${{ steps.parse_warnings.outputs.console_warnings }}
             
             View full report: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           to: ${{ secrets.NOTIFICATION_EMAIL }}
@@ -200,7 +221,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'push'  
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' 
     
     steps:
       - name: Checkout
@@ -235,7 +256,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
-    if: github.event_name == 'push'  
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' 
     
     steps:
       - name: Deploy to GitHub Pages
