@@ -19,6 +19,7 @@ describe('VacationPlanningComponent', () => {
     const vacationServiceSpy = jasmine.createSpyObj('VacationService', [
       'getVacationEntries',
       'getVacationDaysLeft',
+      'updateVacationDaysLeft',
       'saveVacationEntry',
       'updateVacationEntry',
       'deleteVacationEntry'
@@ -27,7 +28,8 @@ describe('VacationPlanningComponent', () => {
     const snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
 
     vacationServiceSpy.getVacationEntries.and.returnValue(of([]));
-    vacationServiceSpy.getVacationDaysLeft.and.returnValue(of(21));    await TestBed.configureTestingModule({
+    vacationServiceSpy.getVacationDaysLeft.and.returnValue(21);
+    vacationServiceSpy.updateVacationDaysLeft.and.returnValue(Promise.resolve());    await TestBed.configureTestingModule({
       imports: [VacationPlanningComponent, BrowserAnimationsModule, HttpClientTestingModule],
       providers: [
         { provide: VacationService, useValue: vacationServiceSpy },
