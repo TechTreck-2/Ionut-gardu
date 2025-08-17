@@ -13,6 +13,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  issues: write
 
 
 concurrency:
@@ -22,7 +23,7 @@ concurrency:
 jobs:
   nightly-tests:
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     
     steps:
       - name: Checkout
