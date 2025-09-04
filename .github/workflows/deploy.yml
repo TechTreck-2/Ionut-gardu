@@ -62,6 +62,8 @@ jobs:
       - name: Parse individual test results
         id: parse_results
         run: |
+          set +e  # Disable strict error handling for parsing
+          
           if [ -f test_results.txt ]; then
             # Display the test output for debugging
             echo "=== Test output content ==="
@@ -77,37 +79,48 @@ jobs:
             FAILED_TEST_DETAILS=""
             SKIPPED_TEST_DETAILS=""
             
-            # Extract Chrome execution line with test results
-            CHROME_RESULT=$(grep "Chrome.*SUCCESS\|Chrome.*FAILED" test_results.txt | tail -1)
+            # Extract Chrome execution line with test results - look for final execution line
+            CHROME_RESULT=$(grep "Chrome.*Executed.*SUCCESS\|Chrome.*Executed.*FAILED" test_results.txt | tail -1)
             echo "Chrome result line: $CHROME_RESULT"
             
-            # Get overall summary from the TOTAL line first
-            TOTAL_TESTS=$(grep -E "TOTAL:.*SUCCESS" test_results.txt | tail -1 | grep -oE "[0-9]+" | head -1)
-            if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "" ]; then
-              # Fallback to Chrome execution line
-              TOTAL_TESTS=$(echo "$CHROME_RESULT" | grep -oE "Executed [0-9]+" | grep -oE "[0-9]+")
+            # Extract total tests from TOTAL line or Chrome execution line
+            TOTAL_TESTS=$(grep "TOTAL:" test_results.txt | grep -oE "[0-9]+" | head -1)
+            if [ -z "$TOTAL_TESTS" ]; then
+              # Fallback to Chrome execution line - extract number after "Executed"
+              TOTAL_TESTS=$(echo "$CHROME_RESULT" | sed -n 's/.*Executed \([0-9]\+\) of \([0-9]\+\).*/\2/p')
             fi
             
-            # Ensure TOTAL_TESTS is a number
-            if ! [[ "$TOTAL_TESTS" =~ ^[0-9]+$ ]]; then
+            # Ensure TOTAL_TESTS is a valid number
+            if [ -z "$TOTAL_TESTS" ] || ! [[ "$TOTAL_TESTS" =~ ^[0-9]+$ ]]; then
               TOTAL_TESTS="0"
             fi
             
-            # Count failures - look for explicit FAILED mentions first
-            FAILED_TESTS=$(echo "$CHROME_RESULT" | grep -oE "[0-9]+ FAILED" | grep -oE "[0-9]+")
-            if [ -z "$FAILED_TESTS" ] || [ "$FAILED_TESTS" = "" ]; then
-              # Count actual FAILED test specs
-              FAILED_TESTS=$(grep -cE "FAILED.*spec\.ts|✗.*spec\.ts|×.*spec\.ts" test_results.txt || echo "0")
+            # Count failures - check if Chrome result contains FAILED
+            FAILED_TESTS="0"
+            if echo "$CHROME_RESULT" | grep -q "FAILED"; then
+              FAILED_TESTS=$(echo "$CHROME_RESULT" | sed -n 's/.*\([0-9]\+\) FAILED.*/\1/p')
             fi
             
-            # Ensure FAILED_TESTS is a number
-            if ! [[ "$FAILED_TESTS" =~ ^[0-9]+$ ]]; then
+            # Double-check by looking for actual test failures in the output
+            if [ "$FAILED_TESTS" = "0" ] || [ -z "$FAILED_TESTS" ]; then
+              FAILED_COUNT=$(grep -c "FAILED\|✗\|×" test_results.txt 2>/dev/null || echo "0")
+              if [ "$FAILED_COUNT" -gt 0 ]; then
+                # Only count if they are actual test failures, not console errors
+                ACTUAL_FAILURES=$(grep -c "spec\.ts.*FAILED\|\.spec\.ts.*✗\|\.spec\.ts.*×" test_results.txt 2>/dev/null || echo "0")
+                if [ "$ACTUAL_FAILURES" -gt 0 ]; then
+                  FAILED_TESTS="$ACTUAL_FAILURES"
+                fi
+              fi
+            fi
+            
+            # Ensure FAILED_TESTS is a valid number
+            if [ -z "$FAILED_TESTS" ] || ! [[ "$FAILED_TESTS" =~ ^[0-9]+$ ]]; then
               FAILED_TESTS="0"
             fi
             
-            # Safe arithmetic calculation
+            # Calculate passed tests
             PASSED_TESTS=$((TOTAL_TESTS - FAILED_TESTS))
-            if [ $PASSED_TESTS -lt 0 ]; then
+            if [ "$PASSED_TESTS" -lt 0 ]; then
               PASSED_TESTS=0
             fi
             
@@ -120,86 +133,83 @@ jobs:
             INDIVIDUAL_TESTS="📊 **Individual Test Results:**\n\n"
             
             # Method 1: Show test execution summary
-            INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS**✅ Test Execution Summary:**\n"
-            INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  📊 **Total Tests Executed:** $TOTAL_TESTS\n"
-            INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  ✅ **Tests Passed:** $PASSED_TESTS\n"
-            INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  ❌ **Tests Failed:** $FAILED_TESTS\n\n"
+            INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}**✅ Test Execution Summary:**\n"
+            INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  📊 **Total Tests Executed:** $TOTAL_TESTS\n"
+            INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  ✅ **Tests Passed:** $PASSED_TESTS\n"
+            INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  ❌ **Tests Failed:** $FAILED_TESTS\n\n"
             
             # Method 2: Parse Chrome execution progress to show test completion
-            EXECUTION_PROGRESS=$(grep -E "Chrome.*Executed [0-9]+ of [0-9]+ SUCCESS" test_results.txt | tail -10)
+            EXECUTION_PROGRESS=$(grep -E "Chrome.*Executed [0-9]+ of [0-9]+ SUCCESS" test_results.txt | tail -5)
             if [ ! -z "$EXECUTION_PROGRESS" ]; then
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS**✅ Test Execution Progress:**\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}**✅ Test Execution Progress:**\n"
               
               # Get the final execution line to show completion
               FINAL_LINE=$(echo "$EXECUTION_PROGRESS" | tail -1)
               if [ ! -z "$FINAL_LINE" ]; then
-                FINAL_COUNT=$(echo "$FINAL_LINE" | grep -oE "Executed [0-9]+" | grep -oE "[0-9]+")
-                if [ ! -z "$FINAL_COUNT" ]; then
-                  INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  🎯 All $FINAL_COUNT tests completed successfully\n"
+                FINAL_COUNT=$(echo "$FINAL_LINE" | sed -n 's/.*Executed \([0-9]\+\) of \([0-9]\+\).*/\1/p')
+                if [ ! -z "$FINAL_COUNT" ] && [ "$FINAL_COUNT" -gt 0 ]; then
+                  INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  🎯 All $FINAL_COUNT tests completed successfully\n"
                 fi
               fi
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}\n"
             fi
             
             # Method 3: Show test categories based on log analysis
-            INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS**📈 Test Coverage Analysis:**\n"
+            INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}**📈 Test Coverage Analysis:**\n"
             
-            # Count various types of tests from console output
-            AUTH_REFS=$(grep -c "auth\|Auth\|login\|token" test_results.txt 2>/dev/null || echo "0")
-            TIME_REFS=$(grep -c "time\|Time\|timer\|Timer" test_results.txt 2>/dev/null || echo "0")
-            VACATION_REFS=$(grep -c "vacation\|Vacation" test_results.txt 2>/dev/null || echo "0")
-            SERVICE_REFS=$(grep -c "Service\|service" test_results.txt 2>/dev/null || echo "0")
+            # Count various types of tests from console output (using safer approach)
+            AUTH_REFS=$(grep -c -i "auth\|login\|token" test_results.txt 2>/dev/null || echo "0")
+            TIME_REFS=$(grep -c -i "time\|timer" test_results.txt 2>/dev/null || echo "0")
+            VACATION_REFS=$(grep -c -i "vacation" test_results.txt 2>/dev/null || echo "0")
+            SERVICE_REFS=$(grep -c -i "service" test_results.txt 2>/dev/null || echo "0")
             
-            # Ensure variables are clean integers
-            AUTH_REFS=$(echo "$AUTH_REFS" | tr -d '\n\r ' | head -1)
-            TIME_REFS=$(echo "$TIME_REFS" | tr -d '\n\r ' | head -1)
-            VACATION_REFS=$(echo "$VACATION_REFS" | tr -d '\n\r ' | head -1)
-            SERVICE_REFS=$(echo "$SERVICE_REFS" | tr -d '\n\r ' | head -1)
-            
-            # Validate they are numbers
-            [[ ! "$AUTH_REFS" =~ ^[0-9]+$ ]] && AUTH_REFS="0"
-            [[ ! "$TIME_REFS" =~ ^[0-9]+$ ]] && TIME_REFS="0"
-            [[ ! "$VACATION_REFS" =~ ^[0-9]+$ ]] && VACATION_REFS="0"
-            [[ ! "$SERVICE_REFS" =~ ^[0-9]+$ ]] && SERVICE_REFS="0"
+            # Ensure all reference counts are valid numbers
+            [ ! "$AUTH_REFS" -eq "$AUTH_REFS" ] 2>/dev/null && AUTH_REFS="0"
+            [ ! "$TIME_REFS" -eq "$TIME_REFS" ] 2>/dev/null && TIME_REFS="0"
+            [ ! "$VACATION_REFS" -eq "$VACATION_REFS" ] 2>/dev/null && VACATION_REFS="0"
+            [ ! "$SERVICE_REFS" -eq "$SERVICE_REFS" ] 2>/dev/null && SERVICE_REFS="0"
             
             if [ "$AUTH_REFS" -gt 0 ]; then
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  🔐 Authentication & Security: $AUTH_REFS references ✅\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  🔐 Authentication & Security: $AUTH_REFS references ✅\n"
             fi
             if [ "$TIME_REFS" -gt 0 ]; then
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  ⏰ Time Management: $TIME_REFS references ✅\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  ⏰ Time Management: $TIME_REFS references ✅\n"
             fi
             if [ "$VACATION_REFS" -gt 0 ]; then
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  🏖️ Vacation Management: $VACATION_REFS references ✅\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  🏖️ Vacation Management: $VACATION_REFS references ✅\n"
             fi
             if [ "$SERVICE_REFS" -gt 0 ]; then
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  ⚙️ Backend Services: $SERVICE_REFS references ✅\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  ⚙️ Backend Services: $SERVICE_REFS references ✅\n"
             fi
             
             # Method 4: Show specific test scenarios verified
-            INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS\n**🧪 Verified Test Scenarios:**\n"
+            INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}\n**🧪 Verified Test Scenarios:**\n"
             
-            # Check for specific test patterns
+            # Check for specific test patterns (safer grep usage)
             if grep -q "User not authenticated" test_results.txt 2>/dev/null; then
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  🔒 Authentication Error Handling ✅\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  🔒 Authentication Error Handling ✅\n"
             fi
             if grep -q "End date must be after start date" test_results.txt 2>/dev/null; then
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  📅 Date Validation Logic ✅\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  📅 Date Validation Logic ✅\n"
             fi
             if grep -q "Http failure response" test_results.txt 2>/dev/null; then
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  🌐 HTTP Error Handling ✅\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  🌐 HTTP Error Handling ✅\n"
             fi
             if grep -q "Bad Request" test_results.txt 2>/dev/null; then
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  ❗ Request Validation ✅\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  ❗ Request Validation ✅\n"
             fi
             
             # Add failure details if any tests failed
             if [ "$FAILED_TESTS" -gt 0 ]; then
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS\n**❌ Test Failures Detected:**\n"
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  • $FAILED_TESTS test(s) did not pass\n"
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  • Check the detailed logs for specific failure information\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}\n**❌ Test Failures Detected:**\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  • $FAILED_TESTS test(s) did not pass\n"
+              INDIVIDUAL_TESTS="${INDIVIDUAL_TESTS}  • Check the detailed logs for specific failure information\n"
             fi
             
             # Create test result summary
+            PASSED_TEST_DETAILS=""
+            FAILED_TEST_DETAILS=""
+            
             if [ "$PASSED_TESTS" -gt 0 ]; then
               PASSED_TEST_DETAILS="✅ $PASSED_TESTS tests passed successfully"
             fi
@@ -209,11 +219,15 @@ jobs:
             fi
             
             # Look for failed test names with different patterns
+            FAILED_TEST_NAMES=""
             if [ "$FAILED_TESTS" = "0" ]; then
               FAILED_TEST_NAMES="No failed tests"
             else
               # Only capture actual test failures, not console errors
-              FAILED_TEST_NAMES=$(grep -E "FAILED.*spec|✗.*spec|×.*spec|SPEC HAS NO EXPECTATIONS" test_results.txt | head -10 | sed 's/^[[:space:]]*/- /' || echo "No specific test failure details found")
+              FAILED_TEST_NAMES=$(grep -E "FAILED.*spec|✗.*spec|×.*spec|SPEC HAS NO EXPECTATIONS" test_results.txt 2>/dev/null | head -10 | sed 's/^[[:space:]]*/- /' || echo "No specific test failure details found")
+              if [ -z "$FAILED_TEST_NAMES" ]; then
+                FAILED_TEST_NAMES="No specific test failure details found"
+              fi
             fi
             
             # Debug output
@@ -222,25 +236,37 @@ jobs:
             echo "  Failed tests found: $FAILED_TESTS"
             echo "  Passed tests calculated: $PASSED_TESTS"
             
-            # Set outputs
+            # Set outputs with proper multiline handling
             echo "total_tests=$TOTAL_TESTS" >> $GITHUB_OUTPUT
             echo "passed_tests=$PASSED_TESTS" >> $GITHUB_OUTPUT
             echo "failed_tests=$FAILED_TESTS" >> $GITHUB_OUTPUT
-            echo "failed_test_names<<EOF" >> $GITHUB_OUTPUT
-            echo "$FAILED_TEST_NAMES" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
             
-            echo "individual_tests<<EOF" >> $GITHUB_OUTPUT
-            echo -e "$INDIVIDUAL_TESTS" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            # Use proper multiline format for outputs
+            {
+              echo "failed_test_names<<EOF"
+              echo "$FAILED_TEST_NAMES"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
             
-            echo "passed_test_details<<EOF" >> $GITHUB_OUTPUT
-            echo -e "$PASSED_TEST_DETAILS" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            {
+              echo "individual_tests<<EOF" 
+              printf "%b" "$INDIVIDUAL_TESTS"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
             
-            echo "failed_test_details<<EOF" >> $GITHUB_OUTPUT
-            echo -e "$FAILED_TEST_DETAILS" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            {
+              echo "passed_test_details<<EOF"
+              echo "$PASSED_TEST_DETAILS"
+              echo "EOF" 
+            } >> $GITHUB_OUTPUT
+            
+            {
+              echo "failed_test_details<<EOF"
+              echo "$FAILED_TEST_DETAILS"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
+            
+            set -e  # Re-enable strict error handling
           else
             echo "No test_results.txt file found"
             echo "total_tests=0" >> $GITHUB_OUTPUT
@@ -333,7 +359,7 @@ jobs:
           fi
 
       - name: Send email notification (optional)
-        if: always()
+        if: false  # Disable email notifications until secrets are configured
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
