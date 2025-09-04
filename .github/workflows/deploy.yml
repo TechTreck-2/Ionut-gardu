@@ -379,13 +379,10 @@ jobs:
             📋 INDIVIDUAL TEST RESULTS:
             ${{ steps.parse_results.outputs.individual_tests }}
             
-            ${{ steps.parse_results.outputs.passed_tests != '0' && 'PASSED TESTS:' || '' }}
-            ${{ steps.parse_results.outputs.passed_test_details }}
+            ${{ steps.parse_results.outputs.passed_tests != '0' && steps.parse_results.outputs.passed_test_details || '' }}
             
-            ${{ steps.parse_results.outputs.failed_tests != '0' && 'FAILED TESTS:' || '' }}
-            ${{ steps.parse_results.outputs.failed_test_details }}
+            ${{ steps.parse_results.outputs.failed_tests != '0' && steps.parse_results.outputs.failed_test_details || '' }}
             
-            ${{ steps.parse_results.outputs.failed_tests != '0' && 'FAILURE DETAILS:' || '' }}
             ${{ steps.parse_results.outputs.failed_tests != '0' && steps.parse_results.outputs.failed_test_names || '' }}
             
             ⚠️ Console Warnings/Errors (not test failures):
