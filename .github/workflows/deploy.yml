@@ -140,11 +140,6 @@ jobs:
               fi
               INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS\n"
             fi
-                  INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  🎯 All $FINAL_COUNT tests completed successfully\n"
-                fi
-              fi
-              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS\n"
-            fi
             
             # Method 3: Show test categories based on log analysis
             INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS**📈 Test Coverage Analysis:**\n"
@@ -154,6 +149,18 @@ jobs:
             TIME_REFS=$(grep -c "time\|Time\|timer\|Timer" test_results.txt 2>/dev/null || echo "0")
             VACATION_REFS=$(grep -c "vacation\|Vacation" test_results.txt 2>/dev/null || echo "0")
             SERVICE_REFS=$(grep -c "Service\|service" test_results.txt 2>/dev/null || echo "0")
+            
+            # Ensure variables are clean integers
+            AUTH_REFS=$(echo "$AUTH_REFS" | tr -d '\n\r ' | head -1)
+            TIME_REFS=$(echo "$TIME_REFS" | tr -d '\n\r ' | head -1)
+            VACATION_REFS=$(echo "$VACATION_REFS" | tr -d '\n\r ' | head -1)
+            SERVICE_REFS=$(echo "$SERVICE_REFS" | tr -d '\n\r ' | head -1)
+            
+            # Validate they are numbers
+            [[ ! "$AUTH_REFS" =~ ^[0-9]+$ ]] && AUTH_REFS="0"
+            [[ ! "$TIME_REFS" =~ ^[0-9]+$ ]] && TIME_REFS="0"
+            [[ ! "$VACATION_REFS" =~ ^[0-9]+$ ]] && VACATION_REFS="0"
+            [[ ! "$SERVICE_REFS" =~ ^[0-9]+$ ]] && SERVICE_REFS="0"
             
             if [ "$AUTH_REFS" -gt 0 ]; then
               INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  🔐 Authentication & Security: $AUTH_REFS references ✅\n"
