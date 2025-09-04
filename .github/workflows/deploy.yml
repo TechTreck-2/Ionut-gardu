@@ -358,8 +358,8 @@ jobs:
             echo "console_warnings=No test output to analyze" >> $GITHUB_OUTPUT
           fi
 
-      - name: Send email notification (optional)
-        if: false  # Disable email notifications until secrets are configured
+      - name: Send email notification 
+        if: always()    
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
