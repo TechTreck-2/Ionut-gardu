@@ -45,7 +45,7 @@ jobs:
           echo "test_exit_code=$?" >> $GITHUB_OUTPUT
         continue-on-error: true
         
-      - name: Parse test results
+      - name: Parse individual test results
         id: parse_results
         run: |
           if [ -f test_results.txt ]; then
@@ -54,35 +54,80 @@ jobs:
             cat test_results.txt
             echo "=== End of test output ==="
             
-            # Try different patterns for Angular/Jasmine output
-            # Pattern 1: "Executed X of Y"
-            TOTAL_TESTS=$(grep -E "Executed [0-9]+ of [0-9]+" test_results.txt | tail -1 | grep -oE "Executed [0-9]+" | grep -oE "[0-9]+" || echo "0")
+            # Parse individual test results
+            echo "=== Parsing individual test results ==="
             
-            # Pattern 2: "X specs, Y failures"
+            # Create detailed test report
+            INDIVIDUAL_TESTS=""
+            PASSED_TEST_DETAILS=""
+            FAILED_TEST_DETAILS=""
+            SKIPPED_TEST_DETAILS=""
+            
+            # Extract Chrome execution line with test results
+            CHROME_RESULT=$(grep "Chrome.*SUCCESS\|Chrome.*FAILED" test_results.txt | tail -1)
+            
+            # Get overall summary from the TOTAL line or Chrome execution line
+            TOTAL_TESTS=$(echo "$CHROME_RESULT" | grep -oE "Executed [0-9]+" | grep -oE "[0-9]+" || echo "0")
             if [ "$TOTAL_TESTS" = "0" ]; then
-              TOTAL_TESTS=$(grep -E "[0-9]+ specs?" test_results.txt | tail -1 | grep -oE "^[0-9]+" || echo "0")
+              TOTAL_TESTS=$(grep -E "TOTAL:.*SUCCESS" test_results.txt | tail -1 | grep -oE "[0-9]+" | head -1 || echo "0")
             fi
             
-            # Pattern 3: Look for any number followed by "test"
-            if [ "$TOTAL_TESTS" = "0" ]; then
-              TOTAL_TESTS=$(grep -iE "[0-9]+ tests?" test_results.txt | tail -1 | grep -oE "[0-9]+" || echo "0")
-            fi
-            
-            # Look for failures with different patterns
-            # Pattern 1: "X FAILED"
-            FAILED_TESTS=$(grep -E "[0-9]+ FAILED" test_results.txt | tail -1 | grep -oE "[0-9]+" || echo "0")
-            
-            # Pattern 2: "X failures"
+            # Count failures
+            FAILED_TESTS=$(echo "$CHROME_RESULT" | grep -oE "[0-9]+ FAILED" | grep -oE "[0-9]+" || echo "0")
             if [ "$FAILED_TESTS" = "0" ]; then
-              FAILED_TESTS=$(grep -E "[0-9]+ failures?" test_results.txt | tail -1 | grep -oE "[0-9]+" || echo "0")
-            fi
-            
-            # Pattern 3: Look in "Executed X of Y (Z FAILED)"
-            if [ "$FAILED_TESTS" = "0" ]; then
-              FAILED_TESTS=$(grep -E "Executed.*FAILED" test_results.txt | tail -1 | grep -oE "\([0-9]+ FAILED\)" | grep -oE "[0-9]+" || echo "0")
+              FAILED_TESTS=$(grep -cE "FAILED|SPEC HAS NO EXPECTATIONS|✗" test_results.txt || echo "0")
             fi
             
             PASSED_TESTS=$((TOTAL_TESTS - FAILED_TESTS))
+            
+            # Parse individual test files and their results
+            echo "Extracting individual test information..."
+            
+            # Find all spec files being tested
+            SPEC_FILES=$(grep -E "\.spec\.ts" test_results.txt | grep -v "webpack" | head -20 | sort | uniq || echo "")
+            
+            # Parse test suite names and results
+            while IFS= read -r line; do
+              if [[ "$line" =~ (.*\.spec\.ts) ]]; then
+                SPEC_FILE=$(echo "$line" | grep -oE "[^/]+\.spec\.ts" | head -1)
+                if [ ! -z "$SPEC_FILE" ]; then
+                  echo "Found spec file: $SPEC_FILE"
+                  INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS\n📄 **$SPEC_FILE**"
+                fi
+              fi
+            done <<< "$SPEC_FILES"
+            
+            # Look for specific test descriptions and their status
+            TEST_DESCRIPTIONS=$(grep -E "should|it\(|describe\(" test_results.txt | head -30 || echo "")
+            
+            # Parse Chrome test execution results for individual tests
+            CHROME_LINES=$(grep -A5 -B5 "Chrome.*SUCCESS\|Chrome.*FAILED" test_results.txt)
+            
+            # Create a summary of test suites
+            TEST_SUITES=$(grep -E "✓|✗|FAILED" test_results.txt | grep -v "Chrome" | head -20 || echo "")
+            
+            if [ ! -z "$TEST_SUITES" ]; then
+              while IFS= read -r suite_line; do
+                if [[ "$suite_line" =~ ✓ ]]; then
+                  TEST_NAME=$(echo "$suite_line" | sed 's/.*✓/✓/' | sed 's/Chrome.*//')
+                  PASSED_TEST_DETAILS="$PASSED_TEST_DETAILS\n  ✅ $TEST_NAME"
+                elif [[ "$suite_line" =~ ✗|FAILED ]]; then
+                  TEST_NAME=$(echo "$suite_line" | sed 's/.*✗/✗/' | sed 's/Chrome.*//')
+                  FAILED_TEST_DETAILS="$FAILED_TEST_DETAILS\n  ❌ $TEST_NAME"
+                fi
+              done <<< "$TEST_SUITES"
+            fi
+            
+            # If we couldn't parse individual tests, create a generic summary
+            if [ -z "$INDIVIDUAL_TESTS" ]; then
+              INDIVIDUAL_TESTS="📊 **Test Execution Summary**"
+              if [ "$PASSED_TESTS" -gt 0 ]; then
+                PASSED_TEST_DETAILS="\n  ✅ $PASSED_TESTS tests completed successfully"
+              fi
+              if [ "$FAILED_TESTS" -gt 0 ]; then
+                FAILED_TEST_DETAILS="\n  ❌ $FAILED_TESTS tests failed"
+              fi
+            fi
             
             # Look for failed test names with different patterns
             if [ "$FAILED_TESTS" = "0" ]; then
@@ -98,11 +143,24 @@ jobs:
             echo "  Failed tests found: $FAILED_TESTS"
             echo "  Passed tests calculated: $PASSED_TESTS"
             
+            # Set outputs
             echo "total_tests=$TOTAL_TESTS" >> $GITHUB_OUTPUT
             echo "passed_tests=$PASSED_TESTS" >> $GITHUB_OUTPUT
             echo "failed_tests=$FAILED_TESTS" >> $GITHUB_OUTPUT
             echo "failed_test_names<<EOF" >> $GITHUB_OUTPUT
             echo "$FAILED_TEST_NAMES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            
+            echo "individual_tests<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$INDIVIDUAL_TESTS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            
+            echo "passed_test_details<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$PASSED_TEST_DETAILS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            
+            echo "failed_test_details<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$FAILED_TEST_DETAILS" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           else
             echo "No test_results.txt file found"
@@ -110,6 +168,9 @@ jobs:
             echo "passed_tests=0" >> $GITHUB_OUTPUT
             echo "failed_tests=0" >> $GITHUB_OUTPUT
             echo "failed_test_names=No test results file found" >> $GITHUB_OUTPUT
+            echo "individual_tests=No test results to parse" >> $GITHUB_OUTPUT
+            echo "passed_test_details=No test results" >> $GITHUB_OUTPUT
+            echo "failed_test_details=No test results" >> $GITHUB_OUTPUT
           fi
         
       - name: Create test report issue
@@ -121,8 +182,11 @@ jobs:
             const passedTests = '${{ steps.parse_results.outputs.passed_tests }}';
             const failedTests = '${{ steps.parse_results.outputs.failed_tests }}';
             
-            // Safely handle failed test names with proper escaping
+            // Safely handle test details with proper escaping
             const failedTestNames = `${{ steps.parse_results.outputs.failed_test_names }}`.replace(/[\\"'`]/g, ' ');
+            const individualTests = `${{ steps.parse_results.outputs.individual_tests }}`.replace(/[\\"'`]/g, ' ');
+            const passedTestDetails = `${{ steps.parse_results.outputs.passed_test_details }}`.replace(/[\\"'`]/g, ' ');
+            const failedTestDetails = `${{ steps.parse_results.outputs.failed_test_details }}`.replace(/[\\"'`]/g, ' ');
             
             const success = testExitCode === '0';
             const status = success ? '✅ SUCCESS' : '❌ FAILURE';
@@ -135,16 +199,35 @@ jobs:
             body += '**Status:** ' + status + '\n';
             body += '**Branch:** ' + context.ref.replace('refs/heads/', '') + '\n';
             body += '**Commit:** ' + context.sha.substring(0, 7) + '\n\n';
-            body += '### Test Summary\n';
-            body += '- **Total Tests:** ' + totalTests + '\n';
-            body += '- **Passed:** ' + passedTests + '\n';
-            body += '- **Failed:** ' + failedTests + '\n';
             
-            if (parseInt(failedTests) > 0) {
-              body += '\n### Failed Tests\n' + failedTestNames + '\n';
+            // Summary section
+            body += '### 📊 Test Summary\n';
+            body += '- **Total Tests:** ' + totalTests + '\n';
+            body += '- **Passed:** ' + passedTests + ' ✅\n';
+            body += '- **Failed:** ' + failedTests + ' ❌\n\n';
+            
+            // Individual test details
+            if (individualTests && individualTests !== 'No test results to parse') {
+              body += '### 📋 Individual Test Results\n';
+              body += individualTests + '\n';
+              
+              if (passedTestDetails && passedTestDetails !== 'No test results') {
+                body += '\n**Passed Tests:**\n' + passedTestDetails + '\n';
+              }
+              
+              if (failedTestDetails && failedTestDetails !== 'No test results' && parseInt(failedTests) > 0) {
+                body += '\n**Failed Tests:**\n' + failedTestDetails + '\n';
+              }
+              body += '\n';
             }
             
-            body += '\n### Actions\n';
+            // Failed test names (if any)
+            if (parseInt(failedTests) > 0 && failedTestNames !== 'No failed tests') {
+              body += '### 🚨 Failed Test Details\n';
+              body += failedTestNames + '\n\n';
+            }
+            
+            body += '### 🔗 Actions\n';
             body += '- [View workflow run](' + context.payload.repository.html_url + '/actions/runs/' + context.runId + ')\n';
             body += '- [View repository](' + context.payload.repository.html_url + ')\n\n';
             body += '---\n*This report was automatically generated by the nightly test workflow.*';
@@ -180,20 +263,30 @@ jobs:
           password: ${{ secrets.EMAIL_PASSWORD }}
           subject: "${{ steps.test_run.outputs.test_exit_code == '0' && '✅' || '❌' }} Nightly Test Report - ${{ github.repository }}"
           body: |
-            Nightly test execution completed.
+            🌙 Nightly test execution completed.
             
-            Status: ${{ steps.test_run.outputs.test_exit_code == '0' && 'SUCCESS' || 'FAILURE' }}
+            📊 SUMMARY:
+            Status: ${{ steps.test_run.outputs.test_exit_code == '0' && 'SUCCESS ✅' || 'FAILURE ❌' }}
             Total Tests: ${{ steps.parse_results.outputs.total_tests }}
-            Passed: ${{ steps.parse_results.outputs.passed_tests }}
-            Failed: ${{ steps.parse_results.outputs.failed_tests }}
+            Passed: ${{ steps.parse_results.outputs.passed_tests }} ✅
+            Failed: ${{ steps.parse_results.outputs.failed_tests }} ❌
             
-            ${{ steps.parse_results.outputs.failed_tests != '0' && 'Failed Tests:' || '' }}
+            📋 INDIVIDUAL TEST RESULTS:
+            ${{ steps.parse_results.outputs.individual_tests }}
+            
+            ${{ steps.parse_results.outputs.passed_tests != '0' && 'PASSED TESTS:' || '' }}
+            ${{ steps.parse_results.outputs.passed_test_details }}
+            
+            ${{ steps.parse_results.outputs.failed_tests != '0' && 'FAILED TESTS:' || '' }}
+            ${{ steps.parse_results.outputs.failed_test_details }}
+            
+            ${{ steps.parse_results.outputs.failed_tests != '0' && 'FAILURE DETAILS:' || '' }}
             ${{ steps.parse_results.outputs.failed_tests != '0' && steps.parse_results.outputs.failed_test_names || '' }}
             
-            Console Warnings/Errors (not test failures):
+            ⚠️ Console Warnings/Errors (not test failures):
             ${{ steps.parse_warnings.outputs.console_warnings }}
             
-            View full report: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            🔗 View full report: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           to: ${{ secrets.NOTIFICATION_EMAIL }}
           from: GitHub Actions <noreply@github.com>
         continue-on-error: true
