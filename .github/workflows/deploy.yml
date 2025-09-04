@@ -140,6 +140,11 @@ jobs:
               fi
               INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS\n"
             fi
+                  INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS  🎯 All $FINAL_COUNT tests completed successfully\n"
+                fi
+              fi
+              INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS\n"
+            fi
             
             # Method 3: Show test categories based on log analysis
             INDIVIDUAL_TESTS="$INDIVIDUAL_TESTS**📈 Test Coverage Analysis:**\n"
