@@ -1,0 +1,127 @@
+<!-- Chatbot Toggle Button -->
+<button 
+  mat-fab 
+  color="primary" 
+  class="chatbot-toggle"
+  (click)="toggleChat()"
+  matTooltip="Need help? Ask me!"
+  matTooltipPosition="left">
+  <mat-icon>{{ isOpen ? 'close' : 'help' }}</mat-icon>
+</button>
+
+<!-- Chatbot Window -->
+<div class="chatbot-container" 
+     *ngIf="isOpen" 
+     @slideInOut
+     [class.mobile]="isMobile"
+     [class.tablet]="isTablet">
+  <mat-card class="chatbot-card" 
+            (touchstart)="onTouchStart($event)"
+            (touchend)="onTouchEnd($event)">
+    <!-- Header -->
+    <mat-card-header class="chatbot-header">
+      <!-- Mobile swipe indicator -->
+      <div class="swipe-indicator" *ngIf="isMobile"></div>
+      
+      <div mat-card-avatar class="chatbot-avatar">
+        <mat-icon>smart_toy</mat-icon>
+      </div>
+      <mat-card-title>TechTreck Assistant</mat-card-title>
+      <mat-card-subtitle>{{ isMobile ? 'Your app guide' : 'Your personal app guide' }}</mat-card-subtitle>
+      <div class="header-actions">
+        <button mat-icon-button (click)="clearChat()" matTooltip="Clear chat">
+          <mat-icon>refresh</mat-icon>
+        </button>
+        <button mat-icon-button (click)="toggleChat()" matTooltip="Close">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </mat-card-header>
+
+    <!-- Messages Container -->
+    <div class="messages-container" #messagesContainer>
+      <div *ngFor="let message of messages; trackBy: trackByMessageId" 
+           class="message-wrapper"
+           [@fadeInOut]>
+        
+        <!-- Bot Message -->
+        <div *ngIf="message.isBot" class="message bot-message">
+          <div class="message-avatar">
+            <mat-icon>smart_toy</mat-icon>
+          </div>
+          <div class="message-content">
+            <div class="message-bubble bot-bubble">
+              {{ message.content }}
+            </div>
+            <div class="message-time">
+              {{ formatTimestamp(message.timestamp) }}
+            </div>
+          </div>
+        </div>
+
+        <!-- User Message -->
+        <div *ngIf="!message.isBot" class="message user-message">
+          <div class="message-content">
+            <div class="message-bubble user-bubble">
+              {{ message.content }}
+            </div>
+            <div class="message-time">
+              {{ formatTimestamp(message.timestamp) }}
+            </div>
+          </div>
+          <div class="message-avatar">
+            <mat-icon>person</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Typing Indicator -->
+      <div *ngIf="isTyping" class="message bot-message" [@fadeInOut]>
+        <div class="message-avatar">
+          <mat-icon>smart_toy</mat-icon>
+        </div>
+        <div class="message-content">
+          <div class="message-bubble bot-bubble typing-indicator">
+            <mat-spinner diameter="20"></mat-spinner>
+            <span>Assistant is typing...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Replies -->
+    <div class="quick-replies" *ngIf="!isTyping && messages.length > 0">
+      <div class="quick-replies-title">{{ isMobile ? 'Quick:' : 'Quick questions:' }}</div>
+      <mat-chip-set>
+        <mat-chip 
+          *ngFor="let reply of (isMobile ? quickReplies.slice(0, 4) : quickReplies)" 
+          (click)="sendQuickReply(reply)"
+          class="quick-reply-chip">
+          {{ reply.label }}
+        </mat-chip>
+      </mat-chip-set>
+    </div>
+
+    <!-- Input Area -->
+    <mat-card-actions class="input-area">
+      <mat-form-field appearance="outline" class="message-input-field">
+        <mat-label>{{ isMobile ? 'Ask anything...' : 'Ask me anything about TechTreck...' }}</mat-label>
+        <input 
+          matInput 
+          [(ngModel)]="currentMessage"
+          (keypress)="onKeyPress($event)"
+          #messageInput
+          maxlength="500"
+          [placeholder]="isMobile ? 'How can I help?' : 'How can I help you today?'">
+        <button 
+          mat-icon-button 
+          matSuffix 
+          (click)="sendMessage()"
+          [disabled]="!currentMessage.trim()"
+          color="primary">
+          <mat-icon>send</mat-icon>
+        </button>
+      </mat-form-field>
+    </mat-card-actions>
+  </mat-card>
+</div>
